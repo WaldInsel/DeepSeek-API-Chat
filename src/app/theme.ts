@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import { useSettings, type ThemePreference } from '../services/settings.js'
+import { syncSystemBarIcons } from './systemBars.js'
 
 export type Theme = 'light' | 'dark'
 
@@ -41,6 +42,8 @@ const applyTheme = (theme: Theme) => {
     body.removeAttribute('data-ds-dark-theme')
   }
   document.documentElement.style.colorScheme = theme
+  // 全面屏下系统栏图标要和页面底色反着来，否则浅色页面看不到状态栏
+  syncSystemBarIcons(theme === 'dark')
   // 首次背景色同步在样式表加载完成后执行，适配 WebKit 的 defer 脚本执行顺序。
   if (document.readyState === 'complete') {
     syncPageBackground()

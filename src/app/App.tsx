@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useTranslate } from '../i18n/index.js'
 import { useSettings } from '../services/settings.js'
 import { useIsMobile, useMobileViewport, usePreventPageScroll } from './viewport.js'
+import { setupSystemBars } from './systemBars.js'
 import {
   bindChatPersistence,
   initChat,
@@ -51,6 +52,9 @@ export const App = () => {
   const activeId = useChatStore((state) => state.activeId)
 
   usePreventPageScroll(isMobile)
+
+  // 安卓端把真实安全区写进 CSS 变量，页面自己抬高底部、压低顶部
+  useEffect(setupSystemBars, [])
 
   useEffect(() => {
     document.documentElement.lang = locale

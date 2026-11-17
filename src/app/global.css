@@ -1,6 +1,9 @@
 :root {
   --message-list-max-width: 840px;
   --message-list-padding-horizontal: 44px;
+  /* 全面屏安全区：安卓由 MainActivity 注入实际值，网页与其它平台用 env() 兜底 */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 @media (max-width: 1023px) {
