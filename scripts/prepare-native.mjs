@@ -193,7 +193,8 @@ if (existsSync(androidBuildGradle)) {
 // keystore 由 workflow 解码到 android/app/release.keystore，密码走环境变量；
 // 三者缺一就不注入，release 包保持未签名，不影响其它构建。
 const releaseKeystore = 'android/app/release.keystore'
-const signingEnvKeys = ['ANDROID_KEYSTORE_PASSWORD', 'ANDROID_KEY_ALIAS', 'ANDROID_KEY_PASSWORD']
+// PKCS12 不支持「库密码 != 密钥密码」，keyPassword 缺省时复用 store 密码
+const signingEnvKeys = ['ANDROID_KEYSTORE_PASSWORD', 'ANDROID_KEY_ALIAS']
 
 if (
   existsSync(androidBuildGradle) &&
@@ -212,7 +213,7 @@ android {
       storeFile file("release.keystore")
       storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
       keyAlias System.getenv("ANDROID_KEY_ALIAS")
-      keyPassword System.getenv("ANDROID_KEY_PASSWORD")
+      keyPassword System.getenv("ANDROID_KEY_PASSWORD") ?: System.getenv("ANDROID_KEYSTORE_PASSWORD")
     }
   }
   buildTypes {
