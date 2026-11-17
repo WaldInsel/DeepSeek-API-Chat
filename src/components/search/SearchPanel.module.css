@@ -1,10 +1,30 @@
 .panel {
-  display: flex;
-  flex-direction: column;
+  --panel-width: min(390px, calc(50vw - 4rem));
   flex-shrink: 0;
   box-sizing: border-box;
-  width: calc(50vw - 4rem);
-  max-width: 390px;
+  width: 0;
+  height: 100%;
+  overflow: hidden;
+  visibility: hidden;
+  /* 收起 / 展开：宽度从右侧收紧，看起来是向左打开 */
+  transition:
+    width var(--ds-transition-duration) var(--ds-ease-in-out),
+    visibility 0s var(--ds-transition-duration);
+}
+
+.panelOpen {
+  width: var(--panel-width);
+  visibility: visible;
+  transition:
+    width var(--ds-transition-duration) var(--ds-ease-in-out),
+    visibility 0s;
+}
+
+.panelInner {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: var(--panel-width);
   height: 100%;
   border-left: 1px solid var(--dsw-alias-border-l2);
   color: var(--dsw-alias-label-primary);
@@ -54,13 +74,32 @@
   }
 }
 
+/* 移动端（安卓）：铺满整屏，从底部划入、向下划出 */
 @media not all and (min-width: 768px) {
   .panel {
     position: fixed;
     inset: 0;
     z-index: 700;
     width: auto;
-    max-width: none;
+    transform: translateY(100%);
+    visibility: hidden;
+    transition:
+      transform var(--ds-transition-duration) var(--ds-ease-in-out),
+      visibility 0s var(--ds-transition-duration);
+  }
+
+  .panelOpen {
+    width: auto;
+    transform: none;
+    visibility: visible;
+    transition:
+      transform var(--ds-transition-duration) var(--ds-ease-in-out),
+      visibility 0s;
+  }
+
+  .panelInner {
+    width: auto;
+    height: 100%;
     border-left: none;
     padding-top: var(--safe-top);
     padding-bottom: var(--safe-bottom);

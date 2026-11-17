@@ -17,6 +17,7 @@ export const Modal = ({
   closable = false,
   className,
   mainClassName,
+  state = 'open',
   onClose,
 }: {
   title: ReactNode
@@ -27,6 +28,8 @@ export const Modal = ({
   className?: string
   /** 内容区的 class */
   mainClassName?: string
+  /** 进出场状态，由 usePresence 驱动；关闭时保留 DOM 播放退出动画 */
+  state?: 'open' | 'closed'
   onClose: () => void
 }) => {
   const t = useTranslate()
@@ -51,6 +54,7 @@ export const Modal = ({
   return createPortal(
     <div
       className={styles.overlay}
+      data-state={state}
       onMouseDown={(event) => event.target === event.currentTarget && onClose()}
     >
       <div

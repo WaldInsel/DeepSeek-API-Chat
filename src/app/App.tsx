@@ -81,7 +81,7 @@ export const App = () => {
   return (
     <>
       <div ref={frameRef} className={clsx(styles.frame, 'app-frame')}>
-        {isMobile ? <MobileSider /> : siderCollapsed ? null : <Sider />}
+        {isMobile ? <MobileSider /> : <Sider collapsed={siderCollapsed} />}
         <main className={styles.main}>
           {saveError ? (
             <div className={styles.saveError} role="alert">

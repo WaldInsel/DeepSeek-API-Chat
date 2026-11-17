@@ -70,4 +70,13 @@ body.change-theme *::after {
   html[data-native-insets] .app-frame {
     transition: none;
   }
+
+  /* 系统开启「减弱动态效果」时，抽屉、弹窗的进出场一律即时切换 */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

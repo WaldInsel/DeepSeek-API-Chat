@@ -1,5 +1,6 @@
 declare const styles: {
   readonly "sider": string;
+  readonly "siderCollapsed": string;
   readonly "top": string;
   readonly "appName": string;
   readonly "newChat": string;
@@ -15,6 +16,7 @@ declare const styles: {
   readonly "collapsed": string;
   readonly "collapsedGroup": string;
   readonly "drawer": string;
+  readonly "drawerOpen": string;
   readonly "drawerMask": string;
   readonly "mobile": string;
 };

@@ -1,13 +1,30 @@
 .sider {
+  --sider-width: 261px;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
   box-sizing: border-box;
-  width: 261px;
+  width: var(--sider-width);
   height: 100%;
   padding: 6px 12px 0;
   border-right: 1px solid var(--dsw-alias-border-l1);
   background-color: var(--dsw-specific-sidebar-fill);
+  /* 收起 / 展开：整块向左滑出并让出宽度，内容宽度不变，不会边收边重排 */
+  transition:
+    margin-left var(--ds-transition-duration) var(--ds-ease-in-out),
+    opacity var(--ds-transition-duration) var(--ds-ease-in-out),
+    visibility 0s;
+}
+
+.siderCollapsed {
+  margin-left: calc(-1 * var(--sider-width));
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    margin-left var(--ds-transition-duration) var(--ds-ease-in-out),
+    opacity var(--ds-transition-duration) var(--ds-ease-in-out),
+    visibility 0s var(--ds-transition-duration);
 }
 
 .top {
@@ -177,6 +194,13 @@
   align-items: center;
   gap: 16px;
   margin: 12px 0 0 16px;
+  animation: collapsed-in var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+@keyframes collapsed-in {
+  from {
+    opacity: 0;
+  }
 }
 
 .collapsedGroup {
@@ -199,12 +223,28 @@
   left: 0;
   z-index: 800;
   box-sizing: border-box;
+  transform: translateX(-100%);
+  transition: transform var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.drawerOpen {
+  transform: none;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .drawerMask {
   position: absolute;
   inset: 0;
   z-index: 799;
+  background-color: rgba(0, 0, 0, 0.2);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--ds-transition-duration) var(--ds-ease-in-out);
+
+  [data-ds-dark-theme] & {
+    background-color: rgba(0, 0, 0, 0.5);
+  }
 }
 
 .mobile {

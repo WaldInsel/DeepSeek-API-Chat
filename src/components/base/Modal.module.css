@@ -6,11 +6,28 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
   background-color: rgba(0, 0, 0, var(--overlay-opacity));
   backdrop-filter: blur(2px);
+  transition: opacity var(--ds-transition-duration) var(--ds-ease-in-out);
 
   [data-ds-dark-theme] & {
     --overlay-opacity: 0.6;
+  }
+}
+
+.overlay[data-state='open'] {
+  animation: overlay-in var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.overlay[data-state='closed'] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+@keyframes overlay-in {
+  from {
+    opacity: 0;
   }
 }
 
@@ -31,6 +48,25 @@
     0 0 1px 0 rgba(0, 0, 0, 0.2),
     0 0 4px 0 rgba(0, 0, 0, 0.02),
     0 12px 32px 0 rgba(0, 0, 0, 0.08);
+  transition:
+    opacity var(--ds-transition-duration) var(--ds-ease-in-out),
+    transform var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.overlay[data-state='open'] .content {
+  animation: content-in var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.overlay[data-state='closed'] .content {
+  opacity: 0;
+  transform: scale(0.98);
+}
+
+@keyframes content-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
 }
 
 .header {
@@ -65,4 +101,23 @@
   justify-content: flex-end;
   gap: 8px;
   margin-top: 20px;
+}
+
+/* 移动端（安卓）：从底部向上划入，关闭时向下划出 */
+@media not all and (min-width: 768px) {
+  .overlay[data-state='open'] .content {
+    animation-name: content-in-mobile;
+  }
+
+  .overlay[data-state='closed'] .content {
+    opacity: 1;
+    transform: translateY(100%);
+    transition: transform var(--ds-transition-duration) var(--ds-ease-in-out);
+  }
+
+  @keyframes content-in-mobile {
+    from {
+      transform: translateY(100%);
+    }
+  }
 }
