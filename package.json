@@ -16,6 +16,8 @@
     "format": "oxfmt --write ."
   },
   "dependencies": {
+    "@capacitor/filesystem": "^7.1.9",
+    "@capacitor/share": "^7.0.4",
     "@tauri-apps/plugin-dialog": "^2.8.4",
     "@tauri-apps/plugin-fs": "^2.7.1",
     "@types/katex": "^0.16.5",

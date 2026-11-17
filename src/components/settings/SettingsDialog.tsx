@@ -515,6 +515,20 @@ const ImportHistory = ({
 /** Tauri 的 WebView 会把 <a download> 静默写入系统下载目录且没有下载栏，改用原生「另存为」对话框。 */
 const isTauri = () => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
 
+/** 安卓 WebView 不处理 <a download>，改为写入应用缓存后交给系统分享面板保存。 */
+const isCapacitor = () => typeof window !== 'undefined' && 'Capacitor' in window
+
+const blobToBase64 = (blob: Blob) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = String(reader.result)
+      resolve(result.slice(result.indexOf(',') + 1))
+    }
+    reader.onerror = () => reject(reader.error ?? new Error('Failed to read export archive'))
+    reader.readAsDataURL(blob)
+  })
+
 /** 将全部会话及图片导出为 ZIP 文件并下载 */
 const ExportHistory = ({ disabled }: { disabled: boolean }) => {
   const t = useTranslate()
@@ -540,6 +554,26 @@ const ExportHistory = ({ disabled }: { disabled: boolean }) => {
           return
         }
         await writeFile(path, new Uint8Array(await blob.arrayBuffer()))
+      } else if (isCapacitor()) {
+        const [{ Filesystem, Directory }, { Share }] = await Promise.all([
+          import('@capacitor/filesystem'),
+          import('@capacitor/share'),
+        ])
+        const { uri } = await Filesystem.writeFile({
+          path: name,
+          data: await blobToBase64(blob),
+          directory: Directory.Cache,
+        })
+        const fileUrl = uri.startsWith('file:') ? uri : `file://${uri}`
+        try {
+          await Share.share({ title: name, files: [fileUrl], dialogTitle: t('historyExportShare') })
+        } catch (error) {
+          // 用户在系统分享面板取消，不算导出失败。
+          if (/cancel/i.test(String((error as Error | undefined)?.message ?? error))) {
+            return
+          }
+          throw error
+        }
       } else {
         const url = URL.createObjectURL(blob)
         const link = document.createElement('a')

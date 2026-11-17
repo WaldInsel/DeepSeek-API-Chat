@@ -123,6 +123,7 @@ export const en = {
     'File import failed. The file format may be invalid, or the ZIP file may use an older chat export format. Please export your chat history from DeepSeek again and retry the import.',
   historyExportedOne: 'Exported 1 chat',
   historyExported: 'Exported {count} chats',
+  historyExportShare: 'Save chat history',
   historyExportFailed: 'Export failed: {message}',
   exportAllLabel: 'Export all chats',
   historyExportDescription:
