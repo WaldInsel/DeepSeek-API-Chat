@@ -526,7 +526,7 @@ const ExportHistory = ({ disabled }: { disabled: boolean }) => {
     setBusy(true)
     setStatus(null)
     try {
-      const { name, blob } = await exportHistory()
+      const { name, blob, count } = await exportHistory()
       if (isTauri()) {
         const [{ save }, { writeFile }] = await Promise.all([
           import('@tauri-apps/plugin-dialog'),
@@ -540,14 +540,15 @@ const ExportHistory = ({ disabled }: { disabled: boolean }) => {
           return
         }
         await writeFile(path, new Uint8Array(await blob.arrayBuffer()))
-        return
+      } else {
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = name
+        link.click()
+        setTimeout(() => URL.revokeObjectURL(url), 10_000)
       }
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = name
-      link.click()
-      setTimeout(() => URL.revokeObjectURL(url), 10_000)
+      setStatus({ key: count === 1 ? 'historyExportedOne' : 'historyExported', params: { count } })
     } catch (error) {
       setStatus(errorStatus('historyExportFailed', error))
     } finally {
