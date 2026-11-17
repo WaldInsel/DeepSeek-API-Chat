@@ -15,6 +15,7 @@ import {
   exportHistory,
   importHistory,
 } from '../../services/chat/backup.js'
+import { isCapacitor, isTauri } from '../../app/platform.js'
 import { useIsMobile } from '../../app/viewport.js'
 import { useChatStore } from '../../services/chat/store.js'
 import { regionCodes, getRegionName, provinces } from '../../services/location.js'
@@ -516,12 +517,7 @@ const ImportHistory = ({
   )
 }
 
-/** Tauri 的 WebView 会把 <a download> 静默写入系统下载目录且没有下载栏，改用原生「另存为」对话框。 */
-const isTauri = () => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
-
-/** 安卓 WebView 不处理 <a download>，改为写入系统「文档」目录，写不进去时退回分享面板保存。 */
-const isCapacitor = () => typeof window !== 'undefined' && 'Capacitor' in window
-
+/** 读取 Blob 为 base64（Capacitor 的 Filesystem 只接受 base64 字符串） */
 const blobToBase64 = (blob: Blob) =>
   new Promise<string>((resolve, reject) => {
     const reader = new FileReader()

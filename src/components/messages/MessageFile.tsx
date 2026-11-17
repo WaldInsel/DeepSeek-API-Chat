@@ -1,5 +1,6 @@
 import clsx from 'clsx'
 import { useEffect, useState } from 'react'
+import { isWebApp } from '../../app/platform.js'
 import { useTranslate } from '../../i18n/index.js'
 import { useUploads } from '../../services/attachments.js'
 import { loadFile } from '../../services/chat/db.js'
@@ -57,6 +58,8 @@ export const MessageFile = ({
 }) => {
   const t = useTranslate()
   const url = useFileUrl(file.id)
+  // 原生 WebView 打开 blob: 链接会白屏甚至卡死，只有网页版提供「点击查看原件」
+  const canOpen = isWebApp()
   const [failedUrl, setFailedUrl] = useState<string | null>(null)
   const upload = useUploadState(file)
   const uploading = upload?.status === 'uploading'
@@ -134,8 +137,13 @@ export const MessageFile = ({
       )
     }
 
-    // 正常态：链接到原件
-    return url ? (
+    if (!url) {
+      // 原件还没加载出来（极短暂）
+      return <div className={styles.image} />
+    }
+
+    // 网页版：点开原件看大图；原生 WebView 打不开 blob: 链接，只作为静态缩略图
+    return canOpen ? (
       <a
         className={clsx(styles.image, styles.imageThumb)}
         href={url}
@@ -146,8 +154,9 @@ export const MessageFile = ({
         {preview}
       </a>
     ) : (
-      // 原件还没加载出来（极短暂）
-      <div className={styles.image} />
+      <div className={clsx(styles.image, styles.imageThumb)} title={file.name}>
+        {preview}
+      </div>
     )
   }
 
@@ -158,7 +167,9 @@ export const MessageFile = ({
       status={uploading ? 'uploading' : failed ? 'error' : 'done'}
       error={errorText}
       onRetry={retry ?? undefined}
-      onOpen={url && !upload ? () => window.open(url, '_blank', 'noreferrer') : undefined}
+      onOpen={
+        url && canOpen && !upload ? () => window.open(url, '_blank', 'noreferrer') : undefined
+      }
     />
   )
 }
