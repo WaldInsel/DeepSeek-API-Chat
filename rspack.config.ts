@@ -7,6 +7,8 @@ import { rspack, type Configuration } from '@rspack/core'
 const dev = process.env.NODE_ENV ? process.env.NODE_ENV !== 'production' : process.argv.includes('serve')
 const targets = ['chrome >= 105', 'edge >= 105', 'safari >= 16', 'firefox >= 110']
 const root = path.dirname(fileURLToPath(import.meta.url))
+/** 站点图标源目录，构建时复制到 dist 根目录 */
+const webIcons = path.join(root, 'assets/web')
 const { version } = JSON.parse(
   readFileSync(new URL('./package.json', import.meta.url), 'utf8')
 ) as { version: string }
@@ -82,7 +84,12 @@ export const createConfig = ({
     }),
     new rspack.DefinePlugin({ __API_ORIGIN__: JSON.stringify(apiOrigin) }),
     new rspack.CopyRspackPlugin({
-      patterns: [{ from: path.resolve(root, 'LICENSE'), to: 'LICENSE', toType: 'file' }],
+      patterns: [
+        { from: path.resolve(root, 'LICENSE'), to: 'LICENSE', toType: 'file' },
+        // 站点图标放在 dist 根目录，file:// 下也能按相对路径加载
+        { from: path.join(webIcons, 'favicon.svg'), to: 'favicon.svg' },
+        { from: path.join(webIcons, 'apple-touch-icon.png'), to: 'apple-touch-icon.png' },
+      ],
     }),
   ],
   performance: { hints: false },
