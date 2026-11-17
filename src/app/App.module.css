@@ -1,11 +1,8 @@
 .frame {
   position: absolute;
   inset: 0;
-  box-sizing: border-box;
   display: flex;
   overflow: hidden;
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
   background-color: var(--dsw-alias-bg-base);
 }
 
