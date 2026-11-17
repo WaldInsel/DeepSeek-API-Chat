@@ -515,7 +515,7 @@ const ImportHistory = ({
 /** Tauri 的 WebView 会把 <a download> 静默写入系统下载目录且没有下载栏，改用原生「另存为」对话框。 */
 const isTauri = () => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
 
-/** 安卓 WebView 不处理 <a download>，改为写入应用缓存后交给系统分享面板保存。 */
+/** 安卓 WebView 不处理 <a download>，改为写入系统「文档」目录，写不进去时退回分享面板保存。 */
 const isCapacitor = () => typeof window !== 'undefined' && 'Capacitor' in window
 
 const blobToBase64 = (blob: Blob) =>
@@ -539,6 +539,7 @@ const ExportHistory = ({ disabled }: { disabled: boolean }) => {
   const onExport = async () => {
     setBusy(true)
     setStatus(null)
+    let savedToDocuments = false
     try {
       const { name, blob, count } = await exportHistory()
       if (isTauri()) {
@@ -555,24 +556,38 @@ const ExportHistory = ({ disabled }: { disabled: boolean }) => {
         }
         await writeFile(path, new Uint8Array(await blob.arrayBuffer()))
       } else if (isCapacitor()) {
-        const [{ Filesystem, Directory }, { Share }] = await Promise.all([
-          import('@capacitor/filesystem'),
-          import('@capacitor/share'),
-        ])
-        const { uri } = await Filesystem.writeFile({
-          path: name,
-          data: await blobToBase64(blob),
-          directory: Directory.Cache,
-        })
-        const fileUrl = uri.startsWith('file:') ? uri : `file://${uri}`
+        const { Filesystem, Directory } = await import('@capacitor/filesystem')
+        const data = await blobToBase64(blob)
         try {
-          await Share.share({ title: name, files: [fileUrl], dialogTitle: t('historyExportShare') })
-        } catch (error) {
-          // 用户在系统分享面板取消，不算导出失败。
-          if (/cancel/i.test(String((error as Error | undefined)?.message ?? error))) {
-            return
+          // 写入系统「文档」目录，用户可在文件管理器里直接看到导出的 ZIP
+          await Filesystem.writeFile({
+            path: name,
+            data,
+            directory: Directory.Documents,
+            recursive: true,
+          })
+          savedToDocuments = true
+        } catch {
+          // 个别系统不允许直接写公共目录，退回应用缓存并交给系统分享面板保存
+          const { uri } = await Filesystem.writeFile({
+            path: name,
+            data,
+            directory: Directory.Cache,
+          })
+          const { Share } = await import('@capacitor/share')
+          try {
+            await Share.share({
+              title: name,
+              files: [uri.startsWith('file:') ? uri : `file://${uri}`],
+              dialogTitle: t('historyExportShare'),
+            })
+          } catch (error) {
+            // 用户在系统分享面板取消，不算导出失败。
+            if (/cancel/i.test(String((error as Error | undefined)?.message ?? error))) {
+              return
+            }
+            throw error
           }
-          throw error
         }
       } else {
         const url = URL.createObjectURL(blob)
@@ -582,7 +597,11 @@ const ExportHistory = ({ disabled }: { disabled: boolean }) => {
         link.click()
         setTimeout(() => URL.revokeObjectURL(url), 10_000)
       }
-      setStatus({ key: count === 1 ? 'historyExportedOne' : 'historyExported', params: { count } })
+      setStatus(
+        savedToDocuments
+          ? { key: 'historyExportedDocuments', params: { count } }
+          : { key: count === 1 ? 'historyExportedOne' : 'historyExported', params: { count } }
+      )
     } catch (error) {
       setStatus(errorStatus('historyExportFailed', error))
     } finally {
