@@ -1,16 +1,16 @@
 /** MainActivity 注入的原生桥接，只有 Android 上有 */
 type SystemBarsBridge = {
-  /** 返回 {"top":<CSS px>,"bottom":<CSS px>,"ime":<CSS px>} */
+  /** 返回 {"top":<CSS px>,"bottom":<CSS px>,"ime":<CSS px>,"screen":<CSS px>} */
   getInsets: () => string
   setDarkIcons: (dark: boolean) => void
 }
 
-type Insets = { top: number; bottom: number; ime: number }
+type Insets = { top: number; bottom: number; ime: number; screen: number }
 
 declare global {
   interface Window {
     SystemBars?: SystemBarsBridge
-    __applySystemInsets?: (top: number, bottom: number, ime?: number) => void
+    __applySystemInsets?: (top: number, bottom: number, ime?: number, screen?: number) => void
   }
 }
 
@@ -18,35 +18,57 @@ const toCssPixels = (value: unknown): number =>
   typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0
 
 /**
- * 把系统安全区写成 CSS 变量，组件只读变量，不依赖 WebView 的 env()。
- * ime 是键盘高度：安卓上部分机型（如 vivo）弹出键盘时 visualViewport 不变，
- * 只能靠系统 insets 把页面顶起来。
+ * 输入法实际遮挡的高度（CSS px）。
+ * 部分机型会让窗口随输入法 resize（此时视觉视口已经变矮），部分机型只派发 ime insets，
+ * 这里用「屏幕总高 - 当前视口高度」判断已缩掉多少，避免两边各扣一次把页面顶过头。
  */
-export const applySystemInsets = (top: number, bottom: number, ime = 0) => {
+const resolveKeyboardHeight = (ime: number, screen: number) => {
+  const imePixels = toCssPixels(ime)
+  if (imePixels === 0) {
+    return 0
+  }
+  const viewportHeight = window.innerHeight
+  const covered = screen > 0 ? Math.max(0, Math.round(screen) - viewportHeight) : 0
+  return Math.max(0, imePixels - Math.min(covered, imePixels))
+}
+
+/**
+ * 把系统安全区写成 CSS 变量，组件只读变量，不依赖 WebView 的 env()。
+ * ime 是键盘高度：vivo / OPPO 这类不缩 visualViewport 的机器只能靠它把页面顶起来。
+ */
+export const applySystemInsets = (top: number, bottom: number, ime = 0, screen = 0) => {
   const style = document.documentElement.style
   style.setProperty('--safe-top', `${toCssPixels(top)}px`)
   style.setProperty('--safe-bottom', `${toCssPixels(bottom)}px`)
-  style.setProperty('--ime-bottom', `${toCssPixels(ime)}px`)
+  style.setProperty('--ime-bottom', `${resolveKeyboardHeight(ime, screen)}px`)
 }
 
 const parseInsets = (raw: string): Insets => {
   try {
     const value: unknown = JSON.parse(raw)
     if (typeof value !== 'object' || value === null) {
-      return { top: 0, bottom: 0, ime: 0 }
+      return { top: 0, bottom: 0, ime: 0, screen: 0 }
     }
-    const { top, bottom, ime } = value as { top?: unknown; bottom?: unknown; ime?: unknown }
-    return { top: toCssPixels(top), bottom: toCssPixels(bottom), ime: toCssPixels(ime) }
+    const { top, bottom, ime, screen } = value as {
+      top?: unknown
+      bottom?: unknown
+      ime?: unknown
+      screen?: unknown
+    }
+    return {
+      top: toCssPixels(top),
+      bottom: toCssPixels(bottom),
+      ime: toCssPixels(ime),
+      screen: toCssPixels(screen),
+    }
   } catch {
-    return { top: 0, bottom: 0, ime: 0 }
+    return { top: 0, bottom: 0, ime: 0, screen: 0 }
   }
 }
 
-/** 有原生键盘高度时，安全区和键盘都由原生负责，视觉视口那套不用再跑 */
+/** 当前页面被输入法遮挡的高度，0 表示键盘收起 */
 export const getImeInset = () => {
-  const value = Number.parseFloat(
-    document.documentElement.style.getPropertyValue('--ime-bottom')
-  )
+  const value = Number.parseFloat(document.documentElement.style.getPropertyValue('--ime-bottom'))
   return Number.isFinite(value) && value > 0 ? value : 0
 }
 
@@ -66,6 +88,6 @@ export const setupSystemBars = () => {
   // 标记「高度由原生键盘驱动」，只有这时才给 .app-frame 加高度过渡：
   // 网页端 dvh 会随地址栏伸缩变化，加过渡会拖影。
   document.documentElement.dataset.nativeInsets = ''
-  const { top, bottom, ime } = parseInsets(systemBars.getInsets())
-  applySystemInsets(top, bottom, ime)
+  const { top, bottom, ime, screen } = parseInsets(systemBars.getInsets())
+  applySystemInsets(top, bottom, ime, screen)
 }

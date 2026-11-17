@@ -79,6 +79,9 @@ public class MainActivity extends BridgeActivity {
       window.setStatusBarContrastEnforced(false);
       window.setNavigationBarContrastEnforced(false);
     }
+    // 显式声明 adjustResize：清单里不写时系统可能挑 adjustPan，
+    // 那样窗口不 resize，ime insets 也不会派发（vivo / OPPO 上就是这样）。
+    window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
 
     WebView webView = getBridge() == null ? null : getBridge().getWebView();
     if (webView != null) {
@@ -127,6 +130,9 @@ public class MainActivity extends BridgeActivity {
     if (webView == null) {
       return;
     }
+    // 屏幕总高一并下发：页面用它判断「窗口是不是已经被输入法 resize 过」，
+    // 避免 resize + ime 各扣一次，把页面顶得太高。
+    int screenHeight = toCssPixels(getResources().getDisplayMetrics().heightPixels);
     String script =
         "window.__applySystemInsets&&window.__applySystemInsets("
             + safeTop
@@ -134,6 +140,8 @@ public class MainActivity extends BridgeActivity {
             + safeBottom
             + ", "
             + imeBottom
+            + ", "
+            + screenHeight
             + ")";
     webView.post(() -> webView.evaluateJavascript(script, null));
   }
@@ -156,6 +164,8 @@ public class MainActivity extends BridgeActivity {
           + safeBottom
           + ",\\"ime\\":"
           + imeBottom
+          + ",\\"screen\\":"
+          + toCssPixels(getResources().getDisplayMetrics().heightPixels)
           + "}";
     }
 
