@@ -1,7 +1,8 @@
 import clsx from 'clsx'
-import { useState, type ReactNode } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useAnchoredPosition, useDismiss } from './anchored.js'
+import { usePresence } from './usePresence.js'
 import styles from './Menu.module.css'
 
 export type MenuOption = {
@@ -23,23 +24,31 @@ export const Menu = ({
   const [open, setOpen] = useState(false)
   const close = () => setOpen(false)
   // 左侧对齐并再左移 5px，让菜单文字与触发元素图标对齐
-  const { anchorRef, floatingRef, position } = useAnchoredPosition<HTMLSpanElement, HTMLDivElement>(
-    open,
-    { align: 'start', alignOffset: -5, offset: 4 }
-  )
+  const { anchorRef, floatingRef, position, side } = useAnchoredPosition<
+    HTMLSpanElement,
+    HTMLDivElement
+  >(open, { align: 'start', alignOffset: -5, offset: 4 })
   useDismiss(open, [anchorRef, floatingRef], close)
+  const { mounted, visible } = usePresence(open)
+  // 收起动画期间沿用最后的位置，避免菜单一边淡出一边跑回视口左上角
+  const lastPosition = useRef(position)
+  if (position) {
+    lastPosition.current = position
+  }
 
   return (
     <>
       <span ref={anchorRef} className={styles.anchor}>
         {children({ open, toggle: () => setOpen((value) => !value) })}
       </span>
-      {open
+      {mounted
         ? createPortal(
             <div
               ref={floatingRef}
               className={styles.menu}
-              style={position ?? undefined}
+              data-state={visible ? 'open' : 'closed'}
+              data-side={side}
+              style={lastPosition.current ?? undefined}
               role="menu"
             >
               {options.map((option) => (

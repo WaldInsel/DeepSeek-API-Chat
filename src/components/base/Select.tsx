@@ -1,8 +1,9 @@
 import clsx from 'clsx'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useAnchoredPosition, useDismiss } from './anchored.js'
 import { IconCheckOutline16, IconChevronDownOutline14 } from './icons.js'
+import { usePresence } from './usePresence.js'
 import styles from './Select.module.css'
 
 export type SelectOption<T extends string> = { value: T; label: string; lang?: string }
@@ -31,12 +32,18 @@ export const Select = <T extends string>({
   const [open, setOpen] = useState(false)
   const current = options.find((option) => option.value === value)
   // 菜单贴右侧展开，最多 320px 高，超出在菜单内滚动
-  const { anchorRef, floatingRef, position } = useAnchoredPosition<
+  const { anchorRef, floatingRef, position, side } = useAnchoredPosition<
     HTMLButtonElement,
     HTMLDivElement
   >(open, { align: 'end', maxHeight: 320, minSpace: 160 })
   // Esc 只关菜单，不让外层弹窗一起关闭
   useDismiss(open, [anchorRef, floatingRef], () => setOpen(false), { captureEscape: true })
+  const { mounted, visible } = usePresence(open)
+  // 收起动画期间沿用最后的位置，避免菜单一边淡出一边跑回视口左上角
+  const lastPosition = useRef(position)
+  if (position) {
+    lastPosition.current = position
+  }
 
   return (
     <>
@@ -59,12 +66,14 @@ export const Select = <T extends string>({
           <IconChevronDownOutline14 />
         </span>
       </button>
-      {open && !disabled
+      {mounted && !disabled
         ? createPortal(
             <div
               ref={floatingRef}
               className={styles.menu}
-              style={position ?? undefined}
+              data-state={visible ? 'open' : 'closed'}
+              data-side={side}
+              style={lastPosition.current ?? undefined}
               role="listbox"
               aria-label={ariaLabel}
             >

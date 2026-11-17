@@ -75,6 +75,35 @@
     0 0 1px 0 rgba(0, 0, 0, 0.2),
     0 0 4px 0 rgba(0, 0, 0, 0.02),
     0 12px 32px 0 rgba(0, 0, 0, 0.08);
+  /* 从触发按钮那一角（贴右对齐）向右下展开、收起 */
+  --menu-enter-offset: -4px;
+  transform-origin: top right;
+  transition:
+    opacity var(--ds-transition-duration) var(--ds-ease-in-out),
+    transform var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+/* 下方放不下、翻到触发元素上方时，从下往上收 */
+.menu[data-side='top'] {
+  --menu-enter-offset: 4px;
+  transform-origin: bottom right;
+}
+
+.menu[data-state='open'] {
+  animation: select-in var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.menu[data-state='closed'] {
+  opacity: 0;
+  transform: scale(0.96) translateY(var(--menu-enter-offset));
+  pointer-events: none;
+}
+
+@keyframes select-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(var(--menu-enter-offset));
+  }
 }
 
 .option {

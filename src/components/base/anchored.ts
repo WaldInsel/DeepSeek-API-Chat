@@ -85,7 +85,7 @@ const resolveSide = (spaceAbove: number, spaceBelow: number, preferred: Side, ne
 export const useAnchoredPosition = <T extends HTMLElement, F extends HTMLElement>(
   open: boolean,
   {
-    side = 'bottom',
+    side: preferredSide = 'bottom',
     align = 'start',
     alignOffset = 0,
     offset = 4,
@@ -98,6 +98,8 @@ export const useAnchoredPosition = <T extends HTMLElement, F extends HTMLElement
   const anchorRef = useRef<T | null>(null) as MutableRefObject<T | null>
   const floatingRef = useRef<F | null>(null) as MutableRefObject<F | null>
   const [position, setPosition] = useState<AnchoredPosition | null>(null)
+  /** 实际落位的一侧（可能因空间不足翻面），供浮层设置动画原点 */
+  const [side, setSide] = useState<Side>(preferredSide)
 
   /** 位置没有实际变化时不更新状态，避免重新测量引起多余渲染 */
   const applyPosition = useCallback((next: AnchoredPosition) => {
@@ -134,7 +136,8 @@ export const useAnchoredPosition = <T extends HTMLElement, F extends HTMLElement
 
     if (maxHeight === undefined) {
       const { width, height } = floating.getBoundingClientRect()
-      const resolved = resolveSide(spaceAbove, spaceBelow, side, height)
+      const resolved = resolveSide(spaceAbove, spaceBelow, preferredSide, height)
+      setSide(resolved)
       applyPosition({
         top: resolved === 'top' ? rect.top - offset - height : rect.bottom + offset,
         left: alignLeft(rect, width, align, alignOffset),
@@ -142,7 +145,8 @@ export const useAnchoredPosition = <T extends HTMLElement, F extends HTMLElement
       return
     }
 
-    const resolved = resolveSide(spaceAbove, spaceBelow, side, minSpace)
+    const resolved = resolveSide(spaceAbove, spaceBelow, preferredSide, minSpace)
+    setSide(resolved)
     const available = Math.max(0, resolved === 'top' ? spaceAbove : spaceBelow)
     // 内容比可用空间小时按内容收口，避免浮层留出多余空白
     const height = Math.max(40, Math.min(maxHeight, available, floating.scrollHeight + 2))
@@ -154,7 +158,17 @@ export const useAnchoredPosition = <T extends HTMLElement, F extends HTMLElement
       right: Math.max(VIEWPORT_PADDING, window.innerWidth - rect.right),
       maxHeight: height,
     })
-  }, [align, alignOffset, applyPosition, floatingRef, getAnchor, maxHeight, minSpace, offset, side])
+  }, [
+    align,
+    alignOffset,
+    applyPosition,
+    floatingRef,
+    getAnchor,
+    maxHeight,
+    minSpace,
+    offset,
+    preferredSide,
+  ])
 
   // 打开时与内容变化时同步测量，必须在绘制前完成
   useLayoutEffect(() => {
@@ -196,7 +210,7 @@ export const useAnchoredPosition = <T extends HTMLElement, F extends HTMLElement
     }
   }, [open])
 
-  return { anchorRef, floatingRef, position }
+  return { anchorRef, floatingRef, position, side }
 }
 
 /** 点击浮层与触发元素之外、或按 Esc 时关闭 */

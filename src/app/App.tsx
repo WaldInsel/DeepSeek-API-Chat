@@ -12,11 +12,11 @@ import {
   useChatStore,
 } from '../services/chat/store.js'
 import { SearchPanel } from '../components/search/SearchPanel.js'
-import { closeSearchPanel } from '../components/search/searchPanelState.js'
+import { closeSearchPanel, useSearchPanel } from '../components/search/searchPanelState.js'
 import { SessionView } from '../components/session/SessionView.js'
 import { MobileHeader } from '../components/session/MobileHeader.js'
 import { Welcome } from '../components/session/Welcome.js'
-import { ensureApiKey } from '../components/settings/settingsDialogState.js'
+import { ensureApiKey, useSettingsDialog } from '../components/settings/settingsDialogState.js'
 import { SettingsDialog } from '../components/settings/SettingsDialog.js'
 import { Toast } from '../components/base/Toast.js'
 import { showToast } from '../components/base/toastState.js'
@@ -26,6 +26,7 @@ import { stopReadAloud } from '../services/speech/readAloud.js'
 import { CollapsedSider } from '../components/sider/CollapsedSider.js'
 import { closeMobileSider } from '../components/sider/mobileSiderState.js'
 import { MobileSider, Sider } from '../components/sider/Sider.js'
+import { useSwipeDrawer } from '../components/sider/useSwipeDrawer.js'
 import styles from './App.module.css'
 
 export const App = () => {
@@ -53,6 +54,11 @@ export const App = () => {
   const activeId = useChatStore((state) => state.activeId)
 
   usePreventPageScroll(isMobile)
+
+  // 安卓：从左侧右滑拉出对话列表，抽屉上左滑收起；设置、搜索结果这类全屏浮层打开时不接管手势
+  const settingsOpen = useSettingsDialog((state) => state.open)
+  const searchOpen = useSearchPanel((state) => state.entry !== null)
+  useSwipeDrawer(isMobile && !settingsOpen && !searchOpen)
 
   // 安卓端把真实安全区写进 CSS 变量，页面自己抬高底部、压低顶部
   useEffect(setupSystemBars, [])

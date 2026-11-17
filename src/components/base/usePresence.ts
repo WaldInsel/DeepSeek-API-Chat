@@ -8,19 +8,21 @@ export const MOTION_DURATION = 240
  *
  * 关闭时先切成退出状态让 CSS 播完动画，等 `duration` 后再卸载，
  * 这样调用方只传一个布尔值，也能同时拿到进入和退出两个方向的过渡。
- * 返回 `mounted` 决定是否渲染，`visible` 决定用打开态还是关闭态的 class。
+ * 返回 `mounted` 决定是否渲染，`visible` 决定用打开态还是关闭态的样式。
+ *
+ * 打开时 `mounted` 立刻为 true（不等副作用），定位类浮层才能在同一帧测量到元素。
  */
 export const usePresence = (open: boolean, duration = MOTION_DURATION) => {
-  const [mounted, setMounted] = useState(open)
+  const [alive, setAlive] = useState(open)
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
     if (!open) {
       setVisible(false)
-      const timer = setTimeout(() => setMounted(false), duration)
+      const timer = setTimeout(() => setAlive(false), duration)
       return () => clearTimeout(timer)
     }
-    setMounted(true)
+    setAlive(true)
     // 挂载后先按关闭状态画一帧，再切到打开状态，过渡才会从起点开始
     let inner = 0
     const outer = requestAnimationFrame(() => {
@@ -32,5 +34,5 @@ export const usePresence = (open: boolean, duration = MOTION_DURATION) => {
     }
   }, [open, duration])
 
-  return { mounted, visible }
+  return { mounted: open || alive, visible }
 }
