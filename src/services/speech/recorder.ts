@@ -9,6 +9,8 @@ export const SAMPLE_RATE = 16000
 export const MAX_SECONDS = 120
 
 const BUFFER_SIZE = 4096
+/** 低于该峰值视为没有录到声音（纯数字静音），直接提示检查麦克风，不浪费一次识别请求 */
+const SILENCE_THRESHOLD = 0.0005
 
 export type Recording = {
   /** 停止录音并返回 WAV；没有采到声音时返回 null */
@@ -64,12 +66,20 @@ export const startRecording = async (onLimit: () => void): Promise<Recording> =>
     analyser.smoothingTimeConstant = 0.2
     const chunks: Float32Array[] = []
     let length = 0
+    let peak = 0
     let limited = false
     processor.onaudioprocess = (event) => {
       if (limited) {
         return
       }
-      chunks.push(new Float32Array(event.inputBuffer.getChannelData(0)))
+      const data = event.inputBuffer.getChannelData(0)
+      for (let i = 0; i < data.length; i++) {
+        const value = Math.abs(data[i])
+        if (value > peak) {
+          peak = value
+        }
+      }
+      chunks.push(new Float32Array(data))
       length += event.inputBuffer.length
       if (length >= MAX_SECONDS * sampleRate) {
         limited = true
@@ -88,7 +98,7 @@ export const startRecording = async (onLimit: () => void): Promise<Recording> =>
     return {
       stop: async () => {
         release()
-        return length === 0 ? null : encodeWav(chunks, length, sampleRate)
+        return length === 0 || peak < SILENCE_THRESHOLD ? null : encodeWav(chunks, length, sampleRate)
       },
       cancel: release,
       analyser,
