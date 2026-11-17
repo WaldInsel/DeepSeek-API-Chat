@@ -10,3 +10,7 @@ build/
 !.env.example
 tmp/
 .codeartsdoer/
+/src-tauri/target/
+/src-tauri/gen/
+/android/
+/ios/
