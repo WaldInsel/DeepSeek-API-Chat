@@ -54,6 +54,8 @@ export const startRecording = async (onLimit: () => void): Promise<Recording> =>
 
   try {
     context = new AudioContext({ sampleRate: SAMPLE_RATE })
+    // 浏览器可能忽略请求的采样率，WAV 头必须写实际采样率，否则音频会被当作错误速率识别。
+    const sampleRate = context.sampleRate
     source = context.createMediaStreamSource(stream)
     processor = context.createScriptProcessor(BUFFER_SIZE, 1, 1)
     // 频谱分析用：串在录音链路中间（原样透传），WebKit 不会处理未连到输出的分析节点
@@ -68,8 +70,8 @@ export const startRecording = async (onLimit: () => void): Promise<Recording> =>
         return
       }
       chunks.push(new Float32Array(event.inputBuffer.getChannelData(0)))
-      length += BUFFER_SIZE
-      if (length >= MAX_SECONDS * SAMPLE_RATE) {
+      length += event.inputBuffer.length
+      if (length >= MAX_SECONDS * sampleRate) {
         limited = true
         onLimit()
       }
@@ -86,7 +88,7 @@ export const startRecording = async (onLimit: () => void): Promise<Recording> =>
     return {
       stop: async () => {
         release()
-        return length === 0 ? null : encodeWav(chunks, length)
+        return length === 0 ? null : encodeWav(chunks, length, sampleRate)
       },
       cancel: release,
       analyser,
@@ -97,8 +99,8 @@ export const startRecording = async (onLimit: () => void): Promise<Recording> =>
   }
 }
 
-const encodeWav = (chunks: Float32Array[], length: number) => {
-  const samples = Math.min(length, MAX_SECONDS * SAMPLE_RATE)
+const encodeWav = (chunks: Float32Array[], length: number, sampleRate: number) => {
+  const samples = Math.min(length, MAX_SECONDS * sampleRate)
   const buffer = new ArrayBuffer(44 + samples * 2)
   const view = new DataView(buffer)
   const writeString = (offset: number, text: string) => {
@@ -113,8 +115,8 @@ const encodeWav = (chunks: Float32Array[], length: number) => {
   view.setUint32(16, 16, true)
   view.setUint16(20, 1, true) // PCM
   view.setUint16(22, 1, true) // 单声道
-  view.setUint32(24, SAMPLE_RATE, true)
-  view.setUint32(28, SAMPLE_RATE * 2, true)
+  view.setUint32(24, sampleRate, true)
+  view.setUint32(28, sampleRate * 2, true)
   view.setUint16(32, 2, true)
   view.setUint16(34, 16, true)
   writeString(36, 'data')

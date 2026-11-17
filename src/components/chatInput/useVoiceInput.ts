@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { TranslationMessage } from '../../i18n/index.js'
+import type { LinkedMessage, TranslationMessage } from '../../i18n/index.js'
 import { transcribe } from '../../services/api/speech.js'
 import { startRecording, type Recording } from '../../services/speech/recorder.js'
 import { useSettings } from '../../services/settings.js'
@@ -23,6 +23,14 @@ const describeRecordingError = (error: unknown): TranslationMessage => {
     }
   }
   return { key: 'voiceInputFailed' }
+}
+
+/** 转写失败时把接口返回的原因带出来，便于定位是鉴权、音频格式还是服务端问题。 */
+const describeTranscribeError = (error: unknown): LinkedMessage => {
+  const message = error instanceof Error ? error.message.trim() : ''
+  return message
+    ? { key: 'voiceInputFailedWithReason', params: { message }, type: 'error' }
+    : { key: 'voiceInputFailed', type: 'error' }
 }
 
 /**
@@ -69,7 +77,11 @@ export const useVoiceInput = (onText: (text: string) => void) => {
       } finally {
         recording.cancel()
       }
-      if (operationRef.current !== operation || !audio) {
+      if (operationRef.current !== operation) {
+        return
+      }
+      if (!audio) {
+        showToast({ key: 'voiceInputNoAudio', type: 'error' })
         return
       }
       controller = new AbortController()
@@ -84,9 +96,9 @@ export const useVoiceInput = (onText: (text: string) => void) => {
       } else {
         showToast({ key: 'voiceInputEmpty' })
       }
-    } catch {
+    } catch (error) {
       if (operationRef.current === operation && !controller?.signal.aborted) {
-        showToast({ key: 'voiceInputFailed' })
+        showToast(describeTranscribeError(error))
       }
     } finally {
       if (operationRef.current === operation) {
