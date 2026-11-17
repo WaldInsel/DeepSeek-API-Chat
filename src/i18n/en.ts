@@ -14,6 +14,8 @@ export const en = {
     'Chats or attachments have not been saved locally. Retry before closing this page.',
   sessionDeleteFailed: 'Unable to delete this chat. Please try again.',
   settings: 'Settings',
+  updateAvailable: 'New version',
+  updateAvailableHint: 'Version {version} is available — open releases',
   appName: 'DeepSeek Chat',
   deleteSessionModalContentTitle: 'Delete chat?',
   deleteSessionWithFilesDescription:

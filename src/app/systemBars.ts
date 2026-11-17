@@ -3,6 +3,8 @@ type SystemBarsBridge = {
   /** 返回 {"top":<CSS px>,"bottom":<CSS px>,"ime":<CSS px>,"screen":<CSS px>} */
   getInsets: () => string
   setDarkIcons: (dark: boolean) => void
+  /** 交给系统浏览器打开链接（WebView 里 window.open 不可靠） */
+  openExternal?: (url: string) => void
 }
 
 type Insets = { top: number; bottom: number; ime: number; screen: number }

@@ -136,6 +136,8 @@
 
 .bottom {
   display: flex;
+  align-items: center;
+  gap: 6px;
   flex-shrink: 0;
   height: 64px;
 }
@@ -144,7 +146,8 @@
   display: flex;
   align-items: center;
   box-sizing: border-box;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   margin-block: auto;
   padding: 6px 2px 6px 6px;
   border: none;
@@ -183,6 +186,28 @@
   white-space: nowrap;
   text-overflow: ellipsis;
   color: var(--dsw-alias-label-primary);
+}
+
+/* 有新版本时出现在设置按钮右边 */
+.updateBadge {
+  flex-shrink: 0;
+  height: 26px;
+  margin-right: 4px;
+  padding: 0 10px;
+  border: 1px solid var(--dsw-alias-brand-primary);
+  border-radius: 100px;
+  background: transparent;
+  color: var(--dsw-alias-brand-primary);
+  font: inherit;
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--dsw-alias-brand-primary);
+    color: var(--dsw-alias-label-inverted, #fff);
+  }
 }
 
 .collapsed {

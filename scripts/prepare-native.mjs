@@ -36,7 +36,9 @@ if (existsSync(androidIcons) && existsSync(androidRes)) {
 // 所以由原生读出 WindowInsets，通过 SystemBars 接口和 window.__applySystemInsets 下发。
 const mainActivitySource = (packageName) => `package ${packageName};
 
+import android.content.Intent;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.Window;
@@ -173,6 +175,21 @@ public class MainActivity extends BridgeActivity {
     public void setDarkIcons(boolean dark) {
       runOnUiThread(() -> applyIconTheme(dark));
     }
+
+    /** 页面里 window.open 打不开外部链接，交给系统浏览器 */
+    @JavascriptInterface
+    public void openExternal(String url) {
+      runOnUiThread(
+          () -> {
+            try {
+              Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+              intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+              startActivity(intent);
+            } catch (Exception ignored) {
+              // 没有能处理该链接的应用时保持安静
+            }
+          });
+    }
   }
 }
 `
@@ -186,6 +203,27 @@ if (existsSync(androidBuildGradle)) {
     const activityDir = join('android/app/src/main/java', ...packageName.split('.'))
     mkdirSync(activityDir, { recursive: true })
     writeFileSync(join(activityDir, 'MainActivity.java'), mainActivitySource(packageName))
+  }
+}
+
+// 版本号统一从 package.json 取：安卓的 versionName/versionCode 由这里写入，
+// 桌面端 Tauri 的 version 字段本来就指向 package.json。
+const packageJsonPath = 'package.json'
+
+if (existsSync(androidBuildGradle) && existsSync(packageJsonPath)) {
+  const { version } = JSON.parse(readFileSync(packageJsonPath, 'utf8'))
+  if (version) {
+    const [major, minor, patch] = String(version)
+      .split('.')
+      .map((part) => Number.parseInt(part, 10) || 0)
+    const versionCode = major * 10000 + (minor ?? 0) * 100 + (patch ?? 0)
+    const gradle = readFileSync(androidBuildGradle, 'utf8')
+    const patched = gradle
+      .replace(/versionCode \d+/, `versionCode ${versionCode}`)
+      .replace(/versionName "[^"]*"/, `versionName "${version}"`)
+    if (patched !== gradle) {
+      writeFileSync(androidBuildGradle, patched)
+    }
   }
 }
 
