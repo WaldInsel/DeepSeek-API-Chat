@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { appendFileSync, cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 const androidManifest = 'android/app/src/main/AndroidManifest.xml'
@@ -186,5 +186,42 @@ if (existsSync(androidBuildGradle)) {
     const activityDir = join('android/app/src/main/java', ...packageName.split('.'))
     mkdirSync(activityDir, { recursive: true })
     writeFileSync(join(activityDir, 'MainActivity.java'), mainActivitySource(packageName))
+  }
+}
+
+// 发布签名：android/ 不入库，签名配置只能在工程生成之后补进去。
+// keystore 由 workflow 解码到 android/app/release.keystore，密码走环境变量；
+// 三者缺一就不注入，release 包保持未签名，不影响其它构建。
+const releaseKeystore = 'android/app/release.keystore'
+const signingEnvKeys = ['ANDROID_KEYSTORE_PASSWORD', 'ANDROID_KEY_ALIAS', 'ANDROID_KEY_PASSWORD']
+
+if (
+  existsSync(androidBuildGradle) &&
+  existsSync(releaseKeystore) &&
+  signingEnvKeys.every((key) => process.env[key])
+) {
+  const gradle = readFileSync(androidBuildGradle, 'utf8')
+  if (!gradle.includes('signingConfigs.release')) {
+    appendFileSync(
+      androidBuildGradle,
+      `
+// 发布签名（由 scripts/prepare-native.mjs 注入）
+android {
+  signingConfigs {
+    release {
+      storeFile file("release.keystore")
+      storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
+      keyAlias System.getenv("ANDROID_KEY_ALIAS")
+      keyPassword System.getenv("ANDROID_KEY_PASSWORD")
+    }
+  }
+  buildTypes {
+    release {
+      signingConfig signingConfigs.release
+    }
+  }
+}
+`
+    )
   }
 }
