@@ -57,6 +57,7 @@ public class MainActivity extends BridgeActivity {
 
   private int safeTop = 0;
   private int safeBottom = 0;
+  private int imeBottom = 0;
 
   @Override
   @SuppressWarnings("deprecation")
@@ -97,9 +98,11 @@ public class MainActivity extends BridgeActivity {
                               | WindowInsetsCompat.Type.displayCutout())
                       .top);
           int bottom = toCssPixels(insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom);
-          if (top != safeTop || bottom != safeBottom) {
+          int ime = toCssPixels(insets.getInsets(WindowInsetsCompat.Type.ime()).bottom);
+          if (top != safeTop || bottom != safeBottom || ime != imeBottom) {
             safeTop = top;
             safeBottom = bottom;
+            imeBottom = ime;
             dispatchInsets();
           }
           return insets;
@@ -125,7 +128,13 @@ public class MainActivity extends BridgeActivity {
       return;
     }
     String script =
-        "window.__applySystemInsets&&window.__applySystemInsets(" + safeTop + ", " + safeBottom + ")";
+        "window.__applySystemInsets&&window.__applySystemInsets("
+            + safeTop
+            + ", "
+            + safeBottom
+            + ", "
+            + imeBottom
+            + ")";
     webView.post(() -> webView.evaluateJavascript(script, null));
   }
 
@@ -141,7 +150,13 @@ public class MainActivity extends BridgeActivity {
 
     @JavascriptInterface
     public String getInsets() {
-      return "{\\"top\\":" + safeTop + ",\\"bottom\\":" + safeBottom + "}";
+      return "{\\"top\\":"
+          + safeTop
+          + ",\\"bottom\\":"
+          + safeBottom
+          + ",\\"ime\\":"
+          + imeBottom
+          + "}";
     }
 
     @JavascriptInterface

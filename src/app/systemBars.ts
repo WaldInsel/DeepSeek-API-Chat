@@ -1,38 +1,53 @@
 /** MainActivity 注入的原生桥接，只有 Android 上有 */
 type SystemBarsBridge = {
-  /** 返回 {"top":<CSS px>,"bottom":<CSS px>} */
+  /** 返回 {"top":<CSS px>,"bottom":<CSS px>,"ime":<CSS px>} */
   getInsets: () => string
   setDarkIcons: (dark: boolean) => void
 }
 
+type Insets = { top: number; bottom: number; ime: number }
+
 declare global {
   interface Window {
     SystemBars?: SystemBarsBridge
-    __applySystemInsets?: (top: number, bottom: number) => void
+    __applySystemInsets?: (top: number, bottom: number, ime?: number) => void
   }
 }
 
 const toCssPixels = (value: unknown): number =>
   typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0
 
-/** 把系统安全区写成 CSS 变量，组件只读变量，不依赖 WebView 的 env() */
-export const applySystemInsets = (top: number, bottom: number) => {
+/**
+ * 把系统安全区写成 CSS 变量，组件只读变量，不依赖 WebView 的 env()。
+ * ime 是键盘高度：安卓上部分机型（如 vivo）弹出键盘时 visualViewport 不变，
+ * 只能靠系统 insets 把页面顶起来。
+ */
+export const applySystemInsets = (top: number, bottom: number, ime = 0) => {
   const style = document.documentElement.style
   style.setProperty('--safe-top', `${toCssPixels(top)}px`)
   style.setProperty('--safe-bottom', `${toCssPixels(bottom)}px`)
+  style.setProperty('--ime-bottom', `${toCssPixels(ime)}px`)
 }
 
-const parseInsets = (raw: string): [number, number] => {
+const parseInsets = (raw: string): Insets => {
   try {
     const value: unknown = JSON.parse(raw)
     if (typeof value !== 'object' || value === null) {
-      return [0, 0]
+      return { top: 0, bottom: 0, ime: 0 }
     }
-    const { top, bottom } = value as { top?: unknown; bottom?: unknown }
-    return [toCssPixels(top), toCssPixels(bottom)]
+    const { top, bottom, ime } = value as { top?: unknown; bottom?: unknown; ime?: unknown }
+    return { top: toCssPixels(top), bottom: toCssPixels(bottom), ime: toCssPixels(ime) }
   } catch {
-    return [0, 0]
+    return { top: 0, bottom: 0, ime: 0 }
   }
+}
+
+/** 有原生键盘高度时，安全区和键盘都由原生负责，视觉视口那套不用再跑 */
+export const getImeInset = () => {
+  const value = Number.parseFloat(
+    document.documentElement.style.getPropertyValue('--ime-bottom')
+  )
+  return Number.isFinite(value) && value > 0 ? value : 0
 }
 
 /** 状态栏和导航栏的图标明暗跟随应用主题 */
@@ -48,6 +63,9 @@ export const setupSystemBars = () => {
   if (!systemBars) {
     return
   }
-  const [top, bottom] = parseInsets(systemBars.getInsets())
-  applySystemInsets(top, bottom)
+  // 标记「高度由原生键盘驱动」，只有这时才给 .app-frame 加高度过渡：
+  // 网页端 dvh 会随地址栏伸缩变化，加过渡会拖影。
+  document.documentElement.dataset.nativeInsets = ''
+  const { top, bottom, ime } = parseInsets(systemBars.getInsets())
+  applySystemInsets(top, bottom, ime)
 }

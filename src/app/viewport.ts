@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useSyncExternalStore } from 'react'
+import { getImeInset } from './systemBars.js'
 
 /** 窄于 768px 按移动端布局 */
 const query = window.matchMedia('not all and (min-width: 768px)')
@@ -61,6 +62,11 @@ export const useMobileViewport = (enabled: boolean) => {
     const update = () => {
       // 双指缩放由浏览器处理，保持当前布局尺寸。
       if (viewport && viewport.scale !== 1) {
+        return
+      }
+      // 原生已经给了键盘高度（安卓），页面高度交给 CSS 扣掉，这里不再介入
+      if (getImeInset() > 0) {
+        reset()
         return
       }
       // 失焦后直接恢复 CSS 的全高布局，不等 Safari 收键盘后的 resize。

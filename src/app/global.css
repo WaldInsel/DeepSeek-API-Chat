@@ -1,9 +1,13 @@
 :root {
   --message-list-max-width: 840px;
   --message-list-padding-horizontal: 44px;
-  /* 全面屏安全区：安卓由 MainActivity 注入实际值，网页与其它平台用 env() 兜底 */
+  /* 全面屏安全区：安卓由 MainActivity 注入实际值，网页与其它平台用 env() 兜底。
+     用法：留白要加在「带背景色的元素」上或它的内部。加在透明外层容器上会把背景
+     推进屏幕中间，四周露出页面底色，看起来就是悬浮卡片。 */
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  /* 键盘高度，仅安卓由原生注入；0 表示键盘收起 */
+  --ime-bottom: 0px;
 }
 
 @media (max-width: 1023px) {
@@ -53,5 +57,17 @@ body.change-theme *::after {
     height: 100%;
     overflow: hidden;
     overscroll-behavior-y: none;
+  }
+
+  /* 键盘弹出/收起时输入区平滑上浮；只在原生键盘驱动（安卓）时启用，
+     网页端的 dvh 会随地址栏伸缩变化，加过渡会拖影 */
+  html[data-native-insets] .app-frame {
+    transition: height 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-native-insets] .app-frame {
+    transition: none;
   }
 }

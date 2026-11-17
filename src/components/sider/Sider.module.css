@@ -199,8 +199,6 @@
   left: 0;
   z-index: 800;
   box-sizing: border-box;
-  padding-top: var(--safe-top);
-  padding-bottom: var(--safe-bottom);
 }
 
 .drawerMask {
@@ -212,6 +210,9 @@
 .mobile {
   width: 300px;
   max-width: calc(100vw - 48px);
+  /* 面板铺满整屏，安全区留白放在面板内部：灰色一直顶到屏幕上沿和小白条下方 */
+  padding-top: calc(6px + var(--safe-top));
+  padding-bottom: var(--safe-bottom);
 
   .listWrap {
     margin-top: 16px;

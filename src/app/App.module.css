@@ -57,6 +57,7 @@
     position: fixed;
     top: var(--app-viewport-top, 0px);
     bottom: auto;
-    height: var(--app-viewport-height, 100dvh);
+    /* 原生给键盘高度时直接扣掉，vivo 这类不缩 visualViewport 的机器也能顶起来 */
+    height: var(--app-viewport-height, calc(100dvh - var(--ime-bottom, 0px)));
   }
 }
