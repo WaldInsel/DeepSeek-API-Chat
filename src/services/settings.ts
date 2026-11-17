@@ -20,14 +20,14 @@ type Settings = {
 }
 
 const KEYS = {
-  apiKey: 'chat-demo:api-key',
-  locale: 'chat-demo:locale',
-  location: 'chat-demo:location',
-  themePreference: 'chat-demo:theme-preference',
-  ttsVoice: 'chat-demo:tts-voice',
-  thinking: 'chat-demo:thinking',
-  search: 'chat-demo:search',
-  siderCollapsed: 'chat-demo:sider-collapsed',
+  apiKey: 'deepseek-api-chat:api-key',
+  locale: 'deepseek-api-chat:locale',
+  location: 'deepseek-api-chat:location',
+  themePreference: 'deepseek-api-chat:theme-preference',
+  ttsVoice: 'deepseek-api-chat:tts-voice',
+  thinking: 'deepseek-api-chat:thinking',
+  search: 'deepseek-api-chat:search',
+  siderCollapsed: 'deepseek-api-chat:sider-collapsed',
 } as const
 
 const read = (key: string) => {
