@@ -512,6 +512,9 @@ const ImportHistory = ({
   )
 }
 
+/** Tauri 的 WebView 会把 <a download> 静默写入系统下载目录且没有下载栏，改用原生「另存为」对话框。 */
+const isTauri = () => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
+
 /** 将全部会话及图片导出为 ZIP 文件并下载 */
 const ExportHistory = ({ disabled }: { disabled: boolean }) => {
   const t = useTranslate()
@@ -524,6 +527,21 @@ const ExportHistory = ({ disabled }: { disabled: boolean }) => {
     setStatus(null)
     try {
       const { name, blob } = await exportHistory()
+      if (isTauri()) {
+        const [{ save }, { writeFile }] = await Promise.all([
+          import('@tauri-apps/plugin-dialog'),
+          import('@tauri-apps/plugin-fs'),
+        ])
+        const path = await save({
+          defaultPath: name,
+          filters: [{ name: 'ZIP', extensions: ['zip'] }],
+        })
+        if (!path) {
+          return
+        }
+        await writeFile(path, new Uint8Array(await blob.arrayBuffer()))
+        return
+      }
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url

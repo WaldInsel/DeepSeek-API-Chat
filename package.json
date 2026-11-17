@@ -10,13 +10,14 @@
     "build": "rspack build -c rspack.config.ts",
     "tauri": "tauri",
     "cap:add:android": "cap add android",
-    "cap:add:ios": "cap add ios",
     "cap:sync": "cap sync",
     "type": "tsc -p tsconfig.json",
     "lint": "oxlint src rspack.config.ts",
     "format": "oxfmt --write ."
   },
   "dependencies": {
+    "@tauri-apps/plugin-dialog": "^2.8.4",
+    "@tauri-apps/plugin-fs": "^2.7.1",
     "@types/katex": "^0.16.5",
     "@types/mdast": "~4.0.3",
     "@types/prismjs": "^1.26.1",
@@ -42,7 +43,6 @@
     "@capacitor/android": "^7.6.10",
     "@capacitor/cli": "^7.6.10",
     "@capacitor/core": "^7.6.10",
-    "@capacitor/ios": "^7.6.10",
     "@rspack/cli": "2.0.2",
     "@rspack/core": "2.0.2",
     "@rspack/dev-server": "2.0.1",
