@@ -59,6 +59,7 @@ public class MainActivity extends BridgeActivity {
   private int safeBottom = 0;
 
   @Override
+  @SuppressWarnings("deprecation")
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
@@ -105,8 +106,9 @@ public class MainActivity extends BridgeActivity {
         });
   }
 
+  /** BridgeActivity 里的 onResume 是 public，重写时不能收窄访问级别。 */
   @Override
-  protected void onResume() {
+  public void onResume() {
     super.onResume();
     // 从后台回来时视口可能变了（分屏、旋转），补发一次
     dispatchInsets();
