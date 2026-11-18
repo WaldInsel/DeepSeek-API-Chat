@@ -32,6 +32,7 @@ import { ApiKeyConfirm, ApiKeyField, useApiKeyEditor } from './ApiKeyField.js'
 import {
   setHistoryImportProgress,
   useHistoryImportProgress,
+  type HistoryImportProgress,
 } from './historyImportState.js'
 import { closeSettings, useSettingsDialog, type SettingsSection } from './settingsDialogState.js'
 import styles from './Settings.module.css'
@@ -366,13 +367,15 @@ const useHistoryImport = () => {
     setFile(null)
     setBusy(true)
     setStatus(null)
-    setHistoryImportProgress(0)
+    // 解析 ZIP 中央目录期间没有字节进度，先显示不确定的「正在解析文件」。
+    setHistoryImportProgress({ phase: 'parsing' })
     try {
       const count = await importHistory(file, (ratio) => {
         // 进度条只显示整数百分比，避免每个解压分块都触发渲染。
         const percent = Math.round(ratio * 100)
-        if (useHistoryImportProgress.getState().progress !== percent) {
-          setHistoryImportProgress(percent)
+        const current = useHistoryImportProgress.getState().progress
+        if (current?.phase !== 'importing' || current.percent !== percent) {
+          setHistoryImportProgress({ phase: 'importing', percent })
         }
       })
       setStatus({ key: count === 1 ? 'historyImportedOne' : 'historyImported', params: { count } })
@@ -388,10 +391,13 @@ const useHistoryImport = () => {
   return { file, busy, status, select: setFile, cancel: () => setFile(null), confirm }
 }
 
-/** 导入进度：细进度条 + 百分比，显示在设置项描述位，弹窗关闭后重新打开也能恢复。 */
-const ImportProgress = ({ value }: { value: number }) => {
+/** 导入进度：解析阶段显示不确定条，写入阶段显示百分比；关掉设置再打开也能恢复。 */
+const ImportProgress = ({ progress }: { progress: HistoryImportProgress }) => {
   const t = useTranslate()
-  const label = t('historyImportProgress', { progress: value })
+  const parsing = progress.phase === 'parsing'
+  const label = parsing
+    ? t('historyImportParsing')
+    : t('historyImportProgress', { progress: progress.percent })
   return (
     <div
       className={styles.importProgress}
@@ -399,10 +405,16 @@ const ImportProgress = ({ value }: { value: number }) => {
       aria-label={label}
       aria-valuemin={0}
       aria-valuemax={100}
-      aria-valuenow={value}
+      aria-valuenow={parsing ? undefined : progress.percent}
     >
       <span className={styles.importProgressTrack}>
-        <span className={styles.importProgressFill} style={{ width: `${value}%` }} />
+        <span
+          className={clsx(
+            styles.importProgressFill,
+            parsing && styles.importProgressIndeterminate
+          )}
+          style={parsing ? undefined : { width: `${progress.percent}%` }}
+        />
       </span>
       <span className={styles.importProgressText}>{label}</span>
     </div>
@@ -425,7 +437,7 @@ const ImportHistory = ({
     <SettingCell
       label={t('historyImport')}
       description={
-        progress === null ? t('historyImportDescription') : <ImportProgress value={progress} />
+        progress === null ? t('historyImportDescription') : <ImportProgress progress={progress} />
       }
       status={historyImport.status}
       action={

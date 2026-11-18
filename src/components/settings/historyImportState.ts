@@ -1,11 +1,15 @@
 import { create } from 'zustand'
 
-/** 历史导入进度（0–100）；null 表示当前没有导入任务。 */
-type HistoryImportProgressState = { progress: number | null }
+/** parsing：读取并校验 ZIP 中央目录；importing：已开始解压写入，percent 为 0–100。 */
+export type HistoryImportProgress =
+  | { phase: 'parsing' }
+  | { phase: 'importing'; percent: number }
+
+type HistoryImportProgressState = { progress: HistoryImportProgress | null }
 
 export const useHistoryImportProgress = create<HistoryImportProgressState>(() => ({
   progress: null,
 }))
 
-export const setHistoryImportProgress = (progress: number | null) =>
+export const setHistoryImportProgress = (progress: HistoryImportProgress | null) =>
   useHistoryImportProgress.setState({ progress })

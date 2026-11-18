@@ -290,6 +290,21 @@
   white-space: nowrap;
 }
 
+.importProgressIndeterminate {
+  width: 40%;
+  animation: importProgressSlide 1.2s var(--ds-ease-in-out) infinite;
+}
+
+@keyframes importProgressSlide {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(250%);
+  }
+}
+
 .apiKey {
     padding-bottom: 0;
   }

@@ -17,6 +17,7 @@ declare const styles: {
   readonly "importProgressTrack": string;
   readonly "importProgressFill": string;
   readonly "importProgressText": string;
+  readonly "importProgressIndeterminate": string;
   readonly "apiKey": string;
   readonly "apiKeySaved": string;
   readonly "apiKeyInput": string;
