@@ -16,6 +16,26 @@
   padding: 0 32px 64px;
 }
 
+.intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.inputSlot {
+  display: flex;
+  flex-shrink: 0;
+  justify-content: center;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .inputSlot {
+    transform: translateY(8px);
+  }
+}
+
 .greeting {
   display: flex;
   align-items: center;
@@ -50,9 +70,14 @@
     padding: 0 16px var(--safe-bottom);
   }
 
-  .greeting {
+  .intro {
     flex-shrink: 0;
     margin: auto 0;
+  }
+
+  .greeting {
+    flex-shrink: 0;
+    margin: 0 0 12px;
   }
 
   .caveat {

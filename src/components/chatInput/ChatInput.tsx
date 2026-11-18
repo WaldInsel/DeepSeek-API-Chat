@@ -1,5 +1,15 @@
 import clsx from 'clsx'
-import { memo, useCallback, useEffect, useLayoutEffect, useRef } from 'react'
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+} from 'react'
+import { createPortal } from 'react-dom'
 import {
   IconGlobeLanguageOutline14,
   IconPaperclipOutline16,
@@ -7,7 +17,7 @@ import {
   IconStopFill16,
   IconThinkOutline14,
 } from '../base/icons.js'
-import { setSearch, setThinking, useSettings } from '../../services/settings.js'
+import { setSearch, setThinking, setThinkingEffort, useSettings } from '../../services/settings.js'
 import { useIsMobile } from '../../app/viewport.js'
 import { sendMessage, stopReply, useChatStore } from '../../services/chat/store.js'
 import {
@@ -22,6 +32,7 @@ import {
 } from '../../services/chat/drafts.js'
 import { stopReadAloud } from '../../services/speech/readAloud.js'
 import { IconButton } from '../base/IconButton.js'
+import { useAnchoredPosition, useDismiss } from '../base/anchored.js'
 import { Tooltip } from '../base/Tooltip.js'
 import { ensureApiKey } from '../settings/settingsDialogState.js'
 import { DragMask, useFileDrop } from './DragMask.js'
@@ -31,6 +42,7 @@ import { DraftAttachments } from './DraftAttachments.js'
 import { useVoiceInput } from './useVoiceInput.js'
 import { VoiceButton } from './VoiceButton.js'
 import { Spectrum } from './Spectrum.js'
+import { ThinkingEffortPanel } from './ThinkingEffortPanel.js'
 import { useTranslate } from '../../i18n/index.js'
 import styles from './ChatInput.module.css'
 
@@ -56,6 +68,47 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const togglesRef = useRef<HTMLDivElement>(null)
+  const thinkingEffort = useSettings((state) => state.thinkingEffort)
+  const [effortOpen, setEffortOpen] = useState(false)
+  const {
+    anchorRef: thinkRef,
+    floatingRef: effortRef,
+    position: effortPosition,
+    side: effortSide,
+  } = useAnchoredPosition<HTMLButtonElement, HTMLDivElement>(effortOpen, {
+    side: 'top',
+    align: 'start',
+    offset: 8,
+  })
+  const effortPositionRef = useRef(effortPosition)
+  if (effortPosition) {
+    effortPositionRef.current = effortPosition
+  }
+  const longPressTimer = useRef(0)
+  const releaseTimer = useRef(0)
+  const longPressStart = useRef({ x: 0, y: 0 })
+  const suppressClick = useRef(false)
+  const [effortClosing, setEffortClosing] = useState(false)
+  const effortCloseTimer = useRef(0)
+
+  const closeEffort = () => {
+    if (effortClosing) {
+      return
+    }
+    setEffortClosing(true)
+    effortCloseTimer.current = window.setTimeout(() => {
+      setEffortOpen(false)
+      setEffortClosing(false)
+    }, 190)
+  }
+
+  const openEffort = () => {
+    window.clearTimeout(effortCloseTimer.current)
+    setEffortClosing(false)
+    setEffortOpen(true)
+  }
+
+  useDismiss(effortOpen, [thinkRef, effortRef], closeEffort)
 
   useLayoutEffect(() => {
     const toggles = togglesRef.current
@@ -73,6 +126,57 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
     observer.observe(toggles)
     return () => observer.disconnect()
   }, [t])
+
+  useEffect(
+    () => () => {
+      window.clearTimeout(longPressTimer.current)
+      window.clearTimeout(releaseTimer.current)
+      window.clearTimeout(effortCloseTimer.current)
+    },
+    []
+  )
+
+  const cancelLongPress = () => {
+    window.clearTimeout(longPressTimer.current)
+    window.clearTimeout(releaseTimer.current)
+    releaseTimer.current = window.setTimeout(() => {
+      suppressClick.current = false
+    }, 400)
+  }
+  const startThinkLongPress = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (event.pointerType !== 'touch' && event.pointerType !== 'pen') {
+      return
+    }
+    longPressStart.current = { x: event.clientX, y: event.clientY }
+    cancelLongPress()
+    longPressTimer.current = window.setTimeout(() => {
+      // 长按后抬起可能补发一次 click，短暂忽略，避免同时开关深度思考。
+      suppressClick.current = true
+      openEffort()
+    }, 500)
+  }
+  const moveThinkLongPress = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (
+      Math.abs(event.clientX - longPressStart.current.x) > 8 ||
+      Math.abs(event.clientY - longPressStart.current.y) > 8
+    ) {
+      cancelLongPress()
+    }
+  }
+  const handleThinkClick = () => {
+    if (suppressClick.current) {
+      suppressClick.current = false
+      return
+    }
+    setThinking(!thinking)
+  }
+  const handleThinkContextMenu = (event: ReactMouseEvent<HTMLButtonElement>) => {
+    event.preventDefault()
+    if (window.matchMedia('(pointer: coarse)').matches) {
+      suppressClick.current = true
+    }
+    openEffort()
+  }
 
   const acceptFiles = (files: File[]) => {
     if (files.length === 0 || useChatStore.getState().importingHistory || !ensureApiKey()) {
@@ -202,18 +306,49 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
       <div className={styles.functionRow}>
         {/* 深度思考 / 智能搜索开关，tooltip 在按钮上方 */}
         <div ref={togglesRef} className={styles.toggles}>
-          <Tooltip content={t('deactivatedThinkTooltip')}>
+          <Tooltip content={effortOpen ? null : t('deactivatedThinkTooltip')}>
             <button
+              ref={thinkRef}
               type="button"
               className={clsx(styles.toggle, thinking && styles.selected)}
               aria-label={t('thinkingSwitch')}
               aria-pressed={thinking}
-              onClick={() => setThinking(!thinking)}
+              aria-haspopup="dialog"
+              aria-expanded={effortOpen}
+              onClick={handleThinkClick}
+              onContextMenu={handleThinkContextMenu}
+              onPointerDown={startThinkLongPress}
+              onPointerMove={moveThinkLongPress}
+              onPointerUp={cancelLongPress}
+              onPointerCancel={cancelLongPress}
+              onPointerLeave={cancelLongPress}
             >
               <IconThinkOutline14 />
               <span className={styles.toggleLabel}>{t('thinkingSwitch')}</span>
             </button>
           </Tooltip>
+          {effortOpen
+            ? createPortal(
+                <div
+                  ref={effortRef}
+                  className={styles.effortPopover}
+                  data-state={effortClosing ? 'closed' : 'open'}
+                  data-side={effortSide}
+                  style={effortPositionRef.current ?? { top: 0, left: 0, visibility: 'hidden' }}
+                  role="dialog"
+                  aria-label={t('thinkingEffortLabel')}
+                >
+                  <ThinkingEffortPanel
+                    value={thinkingEffort}
+                    onSelect={(value) => {
+                      setThinkingEffort(value)
+                      closeEffort()
+                    }}
+                  />
+                </div>,
+                document.body
+              )
+            : null}
           <Tooltip content={t('deactivatedSearchTooltip')}>
             <button
               type="button"

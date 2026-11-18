@@ -144,6 +144,30 @@ export const IconPinOutline16 = () => (
   </svg>
 )
 
+export const IconLightningOutline16 = () => (
+  <svg width={16} height={16} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M9.2 1.5 3.8 8.7h3.1l-.9 5.8 5.2-7.2H8l1.2-5.8Z"
+      stroke="currentColor"
+      strokeWidth={1.7}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+)
+
+export const IconDiamondOutline16 = () => (
+  <svg width={16} height={16} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M3.1 6.3 5.7 3h4.6l2.6 3.3L8 13.2 3.1 6.3Z"
+      stroke="currentColor"
+      strokeWidth={1.7}
+      strokeLinejoin="round"
+    />
+    <path d="M4 6.3h8" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" />
+  </svg>
+)
+
 export const IconFollowsystemOutline16 = () => (
   <svg width={16} height={16} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M12.4827 13.9839V15.2741H3.33758V13.9839H12.4827Z" fill="currentColor" />

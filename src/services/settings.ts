@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { TtsVoice } from './api/speech.js'
+import type { ThinkingEffort } from './api/types.js'
 import { normalizeLocation, type UserLocation } from './location.js'
 
 export type Locale = 'zh-CN' | 'en-US'
@@ -10,7 +11,7 @@ export type ThemePreference = 'light' | 'dark' | 'system'
 /** 思考内容的呈现方式：完全折叠 / 部分折叠（限高滚动）/ 不折叠 */
 export type ThinkingCollapse = 'full' | 'partial' | 'none'
 
-/** 本机设置，存 localStorage：API Key、语言、主题、位置、朗读音色、深度思考与智能搜索开关、思考折叠、侧边栏收起状态 */
+/** 本机设置，存 localStorage：API Key、语言、主题、位置、朗读音色、深度思考与强度、智能搜索开关、思考折叠、侧边栏收起状态 */
 type Settings = {
   apiKey: string | null
   locale: Locale
@@ -18,6 +19,7 @@ type Settings = {
   location: UserLocation | null
   ttsVoice: TtsVoice
   thinking: boolean
+  thinkingEffort: ThinkingEffort
   thinkingCollapse: ThinkingCollapse
   search: boolean
   siderCollapsed: boolean
@@ -30,6 +32,7 @@ const KEYS = {
   themePreference: 'deepseek-api-chat:theme-preference',
   ttsVoice: 'deepseek-api-chat:tts-voice',
   thinking: 'deepseek-api-chat:thinking',
+  thinkingEffort: 'deepseek-api-chat:thinking-effort',
   thinkingCollapse: 'deepseek-api-chat:thinking-collapse',
   search: 'deepseek-api-chat:search',
   siderCollapsed: 'deepseek-api-chat:sider-collapsed',
@@ -98,13 +101,25 @@ const initialThinkingCollapse = (): ThinkingCollapse => {
   return saved === 'full' || saved === 'none' ? saved : 'partial'
 }
 
+/** 旧版本只有开关：明确关闭过就保持关闭，其余（含新用户）默认高。 */
+const initialThinkingEffort = (): ThinkingEffort => {
+  const saved = read(KEYS.thinkingEffort)
+  if (saved === 'none' || saved === 'low' || saved === 'high' || saved === 'max') {
+    return saved
+  }
+  return read(KEYS.thinking) === 'false' ? 'none' : 'high'
+}
+
+const initialEffort = initialThinkingEffort()
+
 export const useSettings = create<Settings>(() => ({
   apiKey: read(KEYS.apiKey),
   locale: initialLocale(),
   location: initialLocation(),
   themePreference: initialThemePreference(),
   ttsVoice: initialTtsVoice(),
-  thinking: read(KEYS.thinking) === 'true',
+  thinking: initialEffort !== 'none',
+  thinkingEffort: initialEffort,
   thinkingCollapse: initialThinkingCollapse(),
   search: read(KEYS.search) === 'true',
   siderCollapsed: read(KEYS.siderCollapsed) === 'true',
@@ -137,8 +152,17 @@ export const setApiKey = (apiKey: string | null) => {
 }
 
 export const setThinking = (thinking: boolean) => {
+  const current = useSettings.getState().thinkingEffort
+  const thinkingEffort = thinking ? (current === 'none' ? 'high' : current) : 'none'
   write(KEYS.thinking, String(thinking))
-  useSettings.setState({ thinking })
+  write(KEYS.thinkingEffort, thinkingEffort)
+  useSettings.setState({ thinking, thinkingEffort })
+}
+
+export const setThinkingEffort = (thinkingEffort: ThinkingEffort) => {
+  write(KEYS.thinkingEffort, thinkingEffort)
+  write(KEYS.thinking, String(thinkingEffort !== 'none'))
+  useSettings.setState({ thinkingEffort, thinking: thinkingEffort !== 'none' })
 }
 
 export const setThinkingCollapse = (thinkingCollapse: ThinkingCollapse) => {
