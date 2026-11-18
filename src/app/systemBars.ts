@@ -13,6 +13,7 @@ declare global {
   interface Window {
     SystemBars?: SystemBarsBridge
     __applySystemInsets?: (top: number, bottom: number) => void
+    __applyFontWeight?: (adjustment: number) => void
   }
 }
 
@@ -28,6 +29,20 @@ export const applySystemInsets = (top: number, bottom: number) => {
   const style = document.documentElement.style
   style.setProperty('--safe-top', `${toCssPixels(top)}px`)
   style.setProperty('--safe-bottom', `${toCssPixels(bottom)}px`)
+}
+
+/**
+ * 安卓系统「字体粗细」：Configuration.fontWeightAdjustment 是 -1000..1000 的偏移量，
+ * 直接叠加到四个字重档位上。网页端没有字重设置，保持 :root 里的默认值。
+ */
+export const applyFontWeight = (adjustment: number) => {
+  const delta = Number.isFinite(adjustment) ? Math.round(adjustment) : 0
+  const clamp = (value: number) => Math.min(1000, Math.max(1, Math.round(value)))
+  const style = document.documentElement.style
+  style.setProperty('--fw-normal', String(clamp(400 + delta)))
+  style.setProperty('--fw-medium', String(clamp(500 + delta)))
+  style.setProperty('--fw-semibold', String(clamp(600 + delta)))
+  style.setProperty('--fw-bold', String(clamp(700 + delta)))
 }
 
 const parseInsets = (raw: string): Insets => {
@@ -55,6 +70,7 @@ export const syncSystemBarIcons = (dark: boolean) => {
 export const setupSystemBars = () => {
   // 即使桥接没注入，也允许原生主动推送（页面加载完成前后各推一次）
   window.__applySystemInsets = applySystemInsets
+  window.__applyFontWeight = applyFontWeight
   const systemBars = window.SystemBars
   if (!systemBars) {
     return

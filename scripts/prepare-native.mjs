@@ -98,6 +98,10 @@ public class MainActivity extends BridgeActivity {
     WebView webView = getBridge() == null ? null : getBridge().getWebView();
     if (webView != null) {
       webView.addJavascriptInterface(new SystemBars(), "SystemBars");
+      // 跟随系统「字体大小」；WebView 自己默认固定在 100%
+      webView
+          .getSettings()
+          .setTextZoom(Math.round(getResources().getConfiguration().fontScale * 100));
       // 首次布局时页面还没就绪，补发一次
       webView.postDelayed(this::dispatchLayout, 1000);
     }
@@ -229,11 +233,22 @@ public class MainActivity extends BridgeActivity {
     if (webView == null) {
       return;
     }
+    int fontWeightAdjustment = 0;
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+      int value = getResources().getConfiguration().fontWeightAdjustment;
+      // FONT_WEIGHT_ADJUSTMENT_UNDEFINED 的取值是 Integer.MAX_VALUE
+      if (value != Integer.MAX_VALUE) {
+        fontWeightAdjustment = value;
+      }
+    }
     String script =
         "window.__applySystemInsets&&window.__applySystemInsets("
             + safeTop
             + ", "
             + pageSafeBottom
+            + ");"
+            + "window.__applyFontWeight&&window.__applyFontWeight("
+            + fontWeightAdjustment
             + ")";
     webView.post(() -> webView.evaluateJavascript(script, null));
   }

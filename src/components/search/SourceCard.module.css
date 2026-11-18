@@ -13,7 +13,7 @@
   align-items: center;
   gap: 6px;
   padding-top: var(--search-view-card-meta-padding-top, 0);
-  font: var(--search-view-card-meta-font, 500 12px/17px var(--dsw-font-family));
+  font: var(--search-view-card-meta-font, 500 0.75rem/1.0625rem var(--dsw-font-family));
 }
 
 .siteIcon {
@@ -38,7 +38,7 @@
 
 .date {
   flex-shrink: 0;
-  font-weight: 400;
+  font-weight: var(--fw-normal);
   color: var(--search-view-card-secondary-color, var(--dsw-alias-label-secondary));
 }
 
@@ -46,7 +46,7 @@
   display: -webkit-box;
   margin-top: 6px;
   overflow: hidden;
-  font: var(--search-view-card-title-font, 500 16px/25px var(--dsw-font-family));
+  font: var(--search-view-card-title-font, 500 1rem/1.5625rem var(--dsw-font-family));
   color: var(--dsw-alias-label-primary);
   line-clamp: 2;
   -webkit-line-clamp: 2;
@@ -57,7 +57,7 @@
   display: -webkit-box;
   margin-top: 6px;
   overflow: hidden;
-  font-size: 13px;
+  font-size: 0.8125rem;
   line-height: 20px;
   color: var(--search-view-card-secondary-color, var(--dsw-alias-label-secondary));
   line-clamp: 2;

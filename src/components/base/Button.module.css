@@ -8,9 +8,9 @@
   border-radius: 4096px;
   border: 1px solid transparent;
   font: inherit;
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 22px;
-  font-weight: 500;
+  font-weight: var(--fw-medium);
   cursor: pointer;
   white-space: nowrap;
   user-select: none;
@@ -65,7 +65,7 @@
   color: var(--dsw-alias-label-primary);
   background-color: transparent;
   border-color: var(--dsw-alias-border-l2);
-  font-weight: 400;
+  font-weight: var(--fw-normal);
 
   &:hover:not(:disabled) {
     background-color: var(--dsw-alias-interactive-bg-hover);
@@ -85,7 +85,7 @@
   color: var(--dsw-alias-state-error-primary);
   background-color: transparent;
   border-color: var(--dsw-alias-state-error-primary);
-  font-weight: 400;
+  font-weight: var(--fw-normal);
 
   &:hover:not(:disabled) {
     background-color: var(--dsw-alias-interactive-bg-hover-danger);

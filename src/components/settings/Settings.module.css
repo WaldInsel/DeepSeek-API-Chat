@@ -37,7 +37,7 @@
   background-color: transparent;
   color: var(--dsw-alias-label-primary);
   font: inherit;
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 22px;
   text-align: left;
   cursor: pointer;
@@ -76,7 +76,7 @@
   min-height: 60px;
   padding: 12px 0;
   color: var(--dsw-alias-label-primary);
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 22px;
 
   & + & {
@@ -100,7 +100,7 @@
 }
 
 .label {
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 22px;
 }
 
@@ -110,13 +110,13 @@
 
 
 .description {
-  font-size: 12px;
+  font-size: 0.75rem;
   line-height: 18px;
   color: var(--dsw-alias-label-tertiary);
 }
 
 .error {
-  font-size: 12px;
+  font-size: 0.75rem;
   line-height: 18px;
   color: var(--dsw-alias-state-error-primary);
 }
@@ -134,7 +134,7 @@
   align-items: center;
   box-sizing: border-box;
   height: var(--ds-control-height-xl);
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 24px;
 }
 
@@ -316,7 +316,7 @@
     border: none;
     border-radius: 40px;
     background-color: var(--dsw-specific-login-input);
-    font-size: 16px;
+    font-size: 1rem;
   }
 
   .apiKeySaved svg {
@@ -340,9 +340,9 @@
   background-color: var(--dsw-alias-button-primary-fill);
   color: var(--dsw-static-neutral-bluish-00);
   font: inherit;
-  font-size: 17px;
+  font-size: 1.0625rem;
   line-height: 24px;
-  font-weight: 500;
+  font-weight: var(--fw-medium);
   cursor: pointer;
 
   &:disabled {

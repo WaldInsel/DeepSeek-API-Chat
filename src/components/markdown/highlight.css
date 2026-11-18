@@ -82,7 +82,7 @@ body.dark .md-code-block {
   .token.keyword-this,
   .token.this,
   .token.bold {
-    font-weight: bold;
+    font-weight: var(--fw-bold);
   }
 
   .token.delimiter.important {
@@ -100,7 +100,7 @@ body.dark .md-code-block {
   .language-markdown .token.title,
   .language-markdown .token.title .token.punctuation {
     color: #6cb8e6;
-    font-weight: bold;
+    font-weight: var(--fw-bold);
   }
 
   .language-markdown .token.blockquote.punctuation {
@@ -378,7 +378,7 @@ body.light .md-code-block {
   }
 
   .token.bold {
-    font-weight: bold;
+    font-weight: var(--fw-bold);
   }
 
   .token.comment,
