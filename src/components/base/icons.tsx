@@ -132,13 +132,15 @@ export const IconEllipsisOutline16 = () => (
 
 export const IconPinOutline16 = () => (
   <svg width={16} height={16} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path
-      d="M6.2 2.25h3.6M7.3 2.25v4.1c0 .42-.21.81-.56 1.06l-1.9 1.35c-.35.25-.54.64-.54 1.05v.94h7.4v-.94c0-.41-.19-.8-.54-1.05l-1.9-1.35c-.35-.25-.56-.64-.56-1.06v-4.1M8 10.75v3"
-      stroke="currentColor"
-      strokeWidth={1.3}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
+    <g transform="rotate(45 8 8)">
+      <path
+        d="M6.2 2.25h3.6M7.3 2.25v4.1c0 .42-.21.81-.56 1.06l-1.9 1.35c-.35.25-.54.64-.54 1.05v.94h7.4v-.94c0-.41-.19-.8-.54-1.05l-1.9-1.35c-.35-.25-.56-.64-.56-1.06v-4.1M8 10.75v3"
+        stroke="currentColor"
+        strokeWidth={1.3}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </g>
   </svg>
 )
 
