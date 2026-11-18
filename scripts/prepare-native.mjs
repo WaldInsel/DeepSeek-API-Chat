@@ -131,6 +131,31 @@ public class MainActivity extends BridgeActivity {
     refreshLayout(true);
   }
 
+  /**
+   * 系统返回键 / 返回手势：先让页面按「设置 → 搜索结果 → 对话列表」逐层关闭，
+   * 页面返回 false（已经回到主界面）才退出应用。
+   */
+  @Override
+  @SuppressWarnings("deprecation")
+  public void onBackPressed() {
+    WebView webView = getBridge() == null ? null : getBridge().getWebView();
+    if (webView == null) {
+      super.onBackPressed();
+      return;
+    }
+    webView.evaluateJavascript(
+        "window.__handleSystemBack?window.__handleSystemBack():false",
+        handled -> {
+          if (!"true".equals(handled)) {
+            runOnUiThread(this::exitApp);
+          }
+        });
+  }
+
+  private void exitApp() {
+    super.onBackPressed();
+  }
+
   /** 物理像素换算成页面用的 CSS 像素（等于 dp）。 */
   private int toCssPixels(int pixels) {
     return Math.round(pixels / getResources().getDisplayMetrics().density);

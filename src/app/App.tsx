@@ -28,6 +28,7 @@ import { CollapsedSider } from '../components/sider/CollapsedSider.js'
 import { closeMobileSider } from '../components/sider/mobileSiderState.js'
 import { MobileSider, Sider } from '../components/sider/Sider.js'
 import { useSwipeDrawer } from '../components/sider/useSwipeDrawer.js'
+import { setupSystemBack } from './systemBack.js'
 import styles from './App.module.css'
 
 export const App = () => {
@@ -63,6 +64,8 @@ export const App = () => {
 
   // 安卓端把真实安全区写进 CSS 变量，页面自己抬高底部、压低顶部
   useEffect(setupSystemBars, [])
+  // 安卓系统返回键：设置 → 搜索结果 → 对话列表逐层关闭，最后才退出应用
+  useEffect(setupSystemBack, [])
 
   // 启动半分钟后检查 GitHub Releases（只在 App 的 WebView 里跑）
   useEffect(setupUpdateCheck, [])
