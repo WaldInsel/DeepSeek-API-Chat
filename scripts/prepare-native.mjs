@@ -33,7 +33,7 @@ if (existsSync(androidIcons) && existsSync(androidRes)) {
 
 // 全面屏适配：声明应用自己处理状态栏与手势条，并把真实安全区交给页面。
 // WebView 的 env(safe-area-inset-*) 在安卓上大多返回 0（尤其是底部导航栏），
-// 所以由原生读出 WindowInsets，通过 SystemBars 接口和 window.__applySystemLayout 下发。
+// 所以由原生读出 WindowInsets，通过 SystemBars 接口和 window.__applySystemInsets 下发。
 const mainActivitySource = (packageName) => `package ${packageName};
 
 import android.content.Intent;
@@ -47,11 +47,15 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
+import android.widget.FrameLayout;
+import androidx.annotation.NonNull;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsAnimationCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
+import java.util.List;
 
 /**
  * 全面屏适配：状态栏与导航栏全透明、页面铺满整屏，
@@ -62,9 +66,10 @@ public class MainActivity extends BridgeActivity {
   private int safeTop = 0;
   private int safeBottom = 0;
   private int pageSafeBottom = 0;
-  private int frameHeight = 0;
-  private int imeInsetPx = 0;
-  private final Rect visibleFrame = new Rect();
+  private View contentChild;
+  private FrameLayout.LayoutParams contentChildParams;
+  private int usableHeightPrevious = 0;
+  private final Rect visibleRect = new Rect();
 
   @Override
   @SuppressWarnings("deprecation")
@@ -86,9 +91,9 @@ public class MainActivity extends BridgeActivity {
       window.setStatusBarContrastEnforced(false);
       window.setNavigationBarContrastEnforced(false);
     }
-    // 显式声明 adjustResize：清单里不写时系统可能挑 adjustPan，
-    // 那样窗口不 resize，ime insets 也不会派发（vivo / OPPO 上就是这样）。
-    window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+    // 不要声明 adjustResize：全屏（decorFitsSystemWindows=false）下它会被部分 ROM
+    // 当成“系统自己处理键盘”，既不 resize WebView 也不派发 ime insets。
+    // 键盘改由下面手动 resize WebView 容器（Capacitor Keyboard 插件同款做法）。
 
     WebView webView = getBridge() == null ? null : getBridge().getWebView();
     if (webView != null) {
@@ -97,29 +102,56 @@ public class MainActivity extends BridgeActivity {
       webView.postDelayed(this::dispatchLayout, 1000);
     }
 
-    View decorView = window.getDecorView();
-    // 老系统（API 30 以下）拿不到 ime insets，靠布局变化和可见区域兜底判断键盘
-    decorView
-        .getViewTreeObserver()
-        .addOnGlobalLayoutListener(() -> refreshLayout(false));
+    FrameLayout content = (FrameLayout) window.getDecorView().findViewById(android.R.id.content);
+    contentChild = content.getChildAt(0);
+    if (contentChild != null) {
+      contentChildParams = (FrameLayout.LayoutParams) contentChild.getLayoutParams();
+      // 老系统拿不到 ime insets，靠可见区域变化兜底（Capacitor Keyboard 插件同款思路）
+      contentChild.getViewTreeObserver().addOnGlobalLayoutListener(this::refreshKeyboard);
+    }
 
     ViewCompat.setOnApplyWindowInsetsListener(
-        decorView,
+        content,
         (view, insets) -> {
-          int top =
+          safeTop =
               toCssPixels(
                   insets
                       .getInsets(
                           WindowInsetsCompat.Type.systemBars()
                               | WindowInsetsCompat.Type.displayCutout())
                       .top);
-          int bottom = toCssPixels(insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom);
-          boolean systemBarsChanged = top != safeTop || bottom != safeBottom;
-          safeTop = top;
-          safeBottom = bottom;
-          imeInsetPx = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom;
-          refreshLayout(systemBarsChanged);
+          safeBottom = toCssPixels(insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom);
+          refreshKeyboard();
+          view.onApplyWindowInsets(insets.toWindowInsets());
           return insets;
+        });
+
+    ViewCompat.setWindowInsetsAnimationCallback(
+        content.getRootView(),
+        new WindowInsetsAnimationCompat.Callback(
+            WindowInsetsAnimationCompat.Callback.DISPATCH_MODE_STOP) {
+          @NonNull
+          @Override
+          public WindowInsetsCompat onProgress(
+              @NonNull WindowInsetsCompat insets,
+              @NonNull List<WindowInsetsAnimationCompat> runningAnimations) {
+            return insets;
+          }
+
+          @NonNull
+          @Override
+          public WindowInsetsAnimationCompat.BoundsCompat onStart(
+              @NonNull WindowInsetsAnimationCompat animation,
+              @NonNull WindowInsetsAnimationCompat.BoundsCompat bounds) {
+            refreshKeyboard();
+            return super.onStart(animation, bounds);
+          }
+
+          @Override
+          public void onEnd(@NonNull WindowInsetsAnimationCompat animation) {
+            super.onEnd(animation);
+            refreshKeyboard();
+          }
         });
   }
 
@@ -127,8 +159,9 @@ public class MainActivity extends BridgeActivity {
   @Override
   public void onResume() {
     super.onResume();
-    // 从后台回来时视口可能变了（分屏、旋转），补发一次
-    refreshLayout(true);
+    // 从后台回来时视口可能变了（分屏、旋转），重新对齐一次
+    refreshKeyboard();
+    dispatchLayout();
   }
 
   /**
@@ -166,39 +199,29 @@ public class MainActivity extends BridgeActivity {
   }
 
   /**
-   * 直接把「页面应该显示多高」算好下发，页面不用再拿 100dvh 做减法。
-   * 键盘高度优先读 ime insets（Android 11+）；更老的系统以及把键盘交给
-   * 系统处理的 ROM（oppo / vivo / 华为）拿不到 ime insets，用「根视图高度 -
-   * 可见区域底边」兜底，两条路取较大值。不足 120dp 的变化不算键盘，
-   * 避免导航栏、手势条的高度被误判成键盘，把页面永久砍掉一截。
+   * 全屏下 Android 不会自动 resize WebView（Capacitor Keyboard 插件注释里的已知 bug），
+   * 这里手动把 WebView 容器的高度改成键盘顶部；键盘收起时恢复 MATCH_PARENT。
+   * 页面因此不需要拿 100dvh 或 insets 做任何减法，内容位置和 WebView 完全一致。
    */
-  private void refreshLayout(boolean force) {
-    View decorView = getWindow().getDecorView();
-    decorView.getWindowVisibleDisplayFrame(visibleFrame);
-    int rootPx = decorView.getRootView().getHeight();
-    int measuredPx = visibleFrame.bottom > 0 ? Math.max(0, rootPx - visibleFrame.bottom) : 0;
-    // 窗口已经被输入法 resize 时可见区域跟着缩，measuredPx 接近 0；
-    // 个别 ROM 仍会同时派发 ime insets，这时以「窗口已缩」为准，避免页面扣两次。
-    int screenPx = getResources().getDisplayMetrics().heightPixels;
-    boolean windowShrunk = screenPx - rootPx >= dpToPx(120);
-    boolean resizedWithIme =
-        measuredPx == 0 && imeInsetPx >= dpToPx(120) && windowShrunk;
-    int keyboardPx = resizedWithIme ? 0 : Math.max(measuredPx, imeInsetPx);
-    boolean keyboardVisible = keyboardPx >= dpToPx(120);
-
-    // 键盘收起时按整屏高度铺满，保证内容延伸到屏幕底端（含小白条区域）；
-    // 分屏、自由窗口下窗口本身比屏幕小，仍然用根视图高度。
-    int restFramePx = windowShrunk ? rootPx : Math.max(rootPx, screenPx);
-    int nextFrame =
-        toCssPixels(keyboardVisible ? Math.max(0, rootPx - keyboardPx) : restFramePx);
-    // 键盘弹出时导航栏被键盘盖住，页面不用再给它留白；收起时恢复，
-    // 输入框停在小白条上方，背景一直铺到屏幕底端。
-    int nextSafeBottom = keyboardVisible ? 0 : safeBottom;
-    if (force || nextFrame != frameHeight || nextSafeBottom != pageSafeBottom) {
-      frameHeight = nextFrame;
-      pageSafeBottom = nextSafeBottom;
-      dispatchLayout();
+  private void refreshKeyboard() {
+    if (contentChild == null || contentChildParams == null) {
+      return;
     }
+    contentChild.getWindowVisibleDisplayFrame(visibleRect);
+    int rootHeight = contentChild.getRootView().getHeight();
+    int covered = Math.max(0, rootHeight - visibleRect.bottom);
+    // 导航栏、手势条只有几十 dp，忽略它们，只把真正的键盘当作键盘
+    boolean keyboardShown = covered >= dpToPx(120);
+    int nextHeight = keyboardShown ? visibleRect.bottom : FrameLayout.LayoutParams.MATCH_PARENT;
+    int nextSafeBottom = keyboardShown ? 0 : safeBottom;
+    if (nextHeight == usableHeightPrevious && nextSafeBottom == pageSafeBottom) {
+      return;
+    }
+    usableHeightPrevious = nextHeight;
+    pageSafeBottom = nextSafeBottom;
+    contentChildParams.height = nextHeight;
+    contentChild.requestLayout();
+    dispatchLayout();
   }
 
   private void dispatchLayout() {
@@ -207,12 +230,10 @@ public class MainActivity extends BridgeActivity {
       return;
     }
     String script =
-        "window.__applySystemLayout&&window.__applySystemLayout("
+        "window.__applySystemInsets&&window.__applySystemInsets("
             + safeTop
             + ", "
             + pageSafeBottom
-            + ", "
-            + frameHeight
             + ")";
     webView.post(() -> webView.evaluateJavascript(script, null));
   }
@@ -233,8 +254,7 @@ public class MainActivity extends BridgeActivity {
           + safeTop
           + ",\\"bottom\\":"
           + pageSafeBottom
-          + ",\\"frame\\":"
-          + frameHeight
+
           + "}";
     }
 

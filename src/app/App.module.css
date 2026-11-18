@@ -55,9 +55,9 @@
 @media not all and (min-width: 768px) {
   .frame {
     position: fixed;
-    top: 0;
+    top: var(--app-viewport-top, 0px);
     bottom: auto;
-    /* 安卓由原生下发页面应显示的高度；网页端没有桥接，用 100dvh 兜底 */
-    height: var(--app-frame-height, 100dvh);
+    /* 手机端跟随视觉视口；网页和 App 一致，键盘收起时回到整屏高度 */
+    height: var(--app-viewport-height, 100dvh);
   }
 }

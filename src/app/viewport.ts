@@ -10,47 +10,38 @@ const subscribe = (onChange: () => void) => {
 
 export const useIsMobile = () => useSyncExternalStore(subscribe, () => query.matches)
 
-/** 原生下发的高度，0 表示原生还没算出结果 */
-const readNativeFrameHeight = () => {
-  const value = Number.parseFloat(
-    document.documentElement.style.getPropertyValue('--app-frame-height')
-  )
-  return Number.isFinite(value) ? value : 0
-}
-
 /**
- * 部分内核（小米等）的 visualViewport 会随键盘一起变矮，但 MainActivity 的
- * ime insets / 可见区域在另一些 ROM（oppo、vivo、华为）上拿不到。这里只做兜底：
- * 视觉视口明显矮于原生高度时才覆盖页面高度，键盘收起后立刻交回原生，
- * 所以不会把底部导航栏（小白条）的区域一起吃掉。
+ * 手机端页面跟随视觉视口，键盘弹出后顶栏和输入框仍留在可见区域。
+ * 安卓 App 里 MainActivity 会把 WebView 容器直接 resize 到键盘顶部
+ * （Capacitor Keyboard 插件同款做法），visualViewport 高度和 WebView 高度一致，
+ * 这里设置的是同一个值，不会重复扣减；键盘收起后变量回到整屏高度，
+ * 底部导航栏（小白条）区域也能完整覆盖。
  */
-export const useNativeKeyboardFallback = (enabled: boolean) => {
+export const useMobileViewport = (enabled: boolean) => {
   const frameRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!enabled) {
       return
     }
-    const viewport = window.visualViewport
     const frame = frameRef.current
-    if (!viewport || !frame || !window.SystemBars) {
+    const viewport = window.visualViewport
+    if (!frame || !viewport) {
       return
     }
 
     let animationFrame = 0
-    const reset = () => frame.style.removeProperty('--app-frame-height')
+    const reset = () => {
+      frame.style.removeProperty('--app-viewport-height')
+      frame.style.removeProperty('--app-viewport-top')
+    }
     const update = () => {
       if (viewport.scale !== 1) {
         reset()
         return
       }
-      const nativeHeight = readNativeFrameHeight()
-      const baseline = nativeHeight > 0 ? nativeHeight : window.innerHeight
-      if (viewport.height < baseline - 40) {
-        frame.style.setProperty('--app-frame-height', `${Math.round(viewport.height)}px`)
-      } else {
-        reset()
-      }
+      frame.style.setProperty('--app-viewport-height', `${Math.round(viewport.height)}px`)
+      frame.style.setProperty('--app-viewport-top', `${Math.round(viewport.offsetTop)}px`)
     }
     const schedule = () => {
       cancelAnimationFrame(animationFrame)
