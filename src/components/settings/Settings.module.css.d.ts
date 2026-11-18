@@ -9,6 +9,8 @@ declare const styles: {
   readonly "row": string;
   readonly "text": string;
   readonly "label": string;
+  readonly "apiKeyHeader": string;
+  readonly "apiGuide": string;
   readonly "uploadButton": string;
 
   readonly "description": string;

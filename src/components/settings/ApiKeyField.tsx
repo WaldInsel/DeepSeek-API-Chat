@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { IconEditOutline16 } from '../base/icons.js'
+import { IconEditOutline16, IconQuestionCircleOutline16 } from '../base/icons.js'
 import { useSettings } from '../../services/settings.js'
 import { useIsMobile } from '../../app/viewport.js'
 import { IconButton } from '../base/IconButton.js'
+import { openApiGuide } from './apiGuideState.js'
 import { useApiKeyForm } from './useApiKeyForm.js'
 import { useTranslate } from '../../i18n/index.js'
 import styles from './Settings.module.css'
@@ -26,7 +27,13 @@ export const ApiKeyField = ({ editor }: { editor: ApiKeyEditor }) => {
   return (
     <div className={styles.cell}>
       <div className={styles.apiKey}>
-        <div className={styles.label}>{t('apiKeyStart')}</div>
+        <div className={styles.apiKeyHeader}>
+          <div className={styles.label}>{t('apiKeyStart')}</div>
+          <button type="button" className={styles.apiGuide} onClick={openApiGuide}>
+            <IconQuestionCircleOutline16 />
+            {t('apiKeyGuideEntry')}
+          </button>
+        </div>
         {apiKey && !editing ? (
           <div className={styles.apiKeySaved}>
             <span className={styles.apiKeyMask}>{'*'.repeat(apiKey.length)}</span>

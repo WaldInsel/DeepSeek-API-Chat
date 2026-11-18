@@ -19,6 +19,7 @@ import { MobileHeader } from '../components/session/MobileHeader.js'
 import { Welcome } from '../components/session/Welcome.js'
 import { ensureApiKey, useSettingsDialog } from '../components/settings/settingsDialogState.js'
 import { SettingsDialog } from '../components/settings/SettingsDialog.js'
+import { ApiKeyGuide } from '../components/settings/ApiKeyGuide.js'
 import { Toast } from '../components/base/Toast.js'
 import { showToast } from '../components/base/toastState.js'
 import { onUploadNotice } from '../services/attachments.js'
@@ -153,6 +154,7 @@ export const App = () => {
         <SearchPanel />
       </div>
       <SettingsDialog />
+      <ApiKeyGuide />
       <Toast />
     </>
   )

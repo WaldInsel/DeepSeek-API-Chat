@@ -66,6 +66,16 @@ export const syncSystemBarIcons = (dark: boolean) => {
   window.SystemBars?.setDarkIcons(dark)
 }
 
+/** 外部链接优先交给安卓原生系统浏览器，网页端退回 window.open */
+export const openExternal = (url: string) => {
+  const bridge = window.SystemBars?.openExternal
+  if (bridge) {
+    bridge(url)
+    return
+  }
+  window.open(url, '_blank', 'noopener,noreferrer')
+}
+
 /** 接管全面屏留白；网页端没有桥接，保持 CSS 里的 env() 兜底 */
 export const setupSystemBars = () => {
   // 即使桥接没注入，也允许原生主动推送（页面加载完成前后各推一次）
