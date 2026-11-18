@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import clsx from 'clsx'
 import { useTranslate } from '../i18n/index.js'
 import { useSettings } from '../services/settings.js'
-import { useIsMobile, useMobileViewport, usePreventPageScroll } from './viewport.js'
+import { useIsMobile, usePreventPageScroll } from './viewport.js'
 import { setupSystemBars } from './systemBars.js'
 import { setupUpdateCheck } from '../services/update.js'
 import {
@@ -48,7 +48,7 @@ export const App = () => {
   const sessionLoadError = useChatStore((state) =>
     state.activeId === null ? false : state.sessionLoadErrors[state.activeId] === true
   )
-  const frameRef = useMobileViewport(isMobile)
+
   const streaming = useChatStore((state) =>
     state.activeId === null ? false : Object.hasOwn(state.streaming, state.activeId)
   )
@@ -90,7 +90,7 @@ export const App = () => {
 
   return (
     <>
-      <div ref={frameRef} className={clsx(styles.frame, 'app-frame')}>
+      <div className={clsx(styles.frame, 'app-frame')}>
         {isMobile ? <MobileSider /> : <Sider collapsed={siderCollapsed} />}
         <main className={styles.main}>
           {saveError ? (

@@ -38,9 +38,11 @@ const mainActivitySource = (packageName) => `package ${packageName};
 
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
@@ -60,6 +62,8 @@ public class MainActivity extends BridgeActivity {
   private int safeTop = 0;
   private int safeBottom = 0;
   private int imeBottom = 0;
+  private int imeInset = 0;
+  private final Rect visibleFrame = new Rect();
 
   @Override
   @SuppressWarnings("deprecation")
@@ -92,8 +96,14 @@ public class MainActivity extends BridgeActivity {
       webView.postDelayed(this::dispatchInsets, 1000);
     }
 
+    View decorView = window.getDecorView();
+    // 老系统（API 30 以下）拿不到 ime insets，靠布局变化和可见区域兜底判断键盘高度
+    decorView
+        .getViewTreeObserver()
+        .addOnGlobalLayoutListener(() -> refreshKeyboardHeight(false));
+
     ViewCompat.setOnApplyWindowInsetsListener(
-        window.getDecorView(),
+        decorView,
         (view, insets) -> {
           int top =
               toCssPixels(
@@ -103,13 +113,11 @@ public class MainActivity extends BridgeActivity {
                               | WindowInsetsCompat.Type.displayCutout())
                       .top);
           int bottom = toCssPixels(insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom);
-          int ime = toCssPixels(insets.getInsets(WindowInsetsCompat.Type.ime()).bottom);
-          if (top != safeTop || bottom != safeBottom || ime != imeBottom) {
-            safeTop = top;
-            safeBottom = bottom;
-            imeBottom = ime;
-            dispatchInsets();
-          }
+          boolean systemBarsChanged = top != safeTop || bottom != safeBottom;
+          safeTop = top;
+          safeBottom = bottom;
+          imeInset = toCssPixels(insets.getInsets(WindowInsetsCompat.Type.ime()).bottom);
+          refreshKeyboardHeight(systemBarsChanged);
           return insets;
         });
   }
@@ -127,14 +135,29 @@ public class MainActivity extends BridgeActivity {
     return Math.round(pixels / getResources().getDisplayMetrics().density);
   }
 
+  /**
+   * 页面需要额外让出的键盘高度。Android 11+ 直接读 ime insets；更老的系统
+   * 以及部分把键盘交给系统处理的 ROM（oppo / vivo / 华为）拿不到 ime insets，
+   * 改用「根视图高度 - 可见区域底边」兜底，两条路取较大值。
+   * 窗口已经被输入法 resize 时根视图本身变矮，这里算出的值接近 0，
+   * 页面高度由 100dvh 自动跟随，不会重复扣减。
+   */
+  private void refreshKeyboardHeight(boolean force) {
+    View decorView = getWindow().getDecorView();
+    decorView.getWindowVisibleDisplayFrame(visibleFrame);
+    int hidden = Math.max(0, decorView.getRootView().getHeight() - visibleFrame.bottom);
+    int keyboard = Math.max(imeInset, toCssPixels(hidden));
+    if (force || keyboard != imeBottom) {
+      imeBottom = keyboard;
+      dispatchInsets();
+    }
+  }
+
   private void dispatchInsets() {
     WebView webView = getBridge() == null ? null : getBridge().getWebView();
     if (webView == null) {
       return;
     }
-    // 屏幕总高一并下发：页面用它判断「窗口是不是已经被输入法 resize 过」，
-    // 避免 resize + ime 各扣一次，把页面顶得太高。
-    int screenHeight = toCssPixels(getResources().getDisplayMetrics().heightPixels);
     String script =
         "window.__applySystemInsets&&window.__applySystemInsets("
             + safeTop
@@ -142,8 +165,6 @@ public class MainActivity extends BridgeActivity {
             + safeBottom
             + ", "
             + imeBottom
-            + ", "
-            + screenHeight
             + ")";
     webView.post(() -> webView.evaluateJavascript(script, null));
   }
@@ -166,8 +187,7 @@ public class MainActivity extends BridgeActivity {
           + safeBottom
           + ",\\"ime\\":"
           + imeBottom
-          + ",\\"screen\\":"
-          + toCssPixels(getResources().getDisplayMetrics().heightPixels)
+
           + "}";
     }
 

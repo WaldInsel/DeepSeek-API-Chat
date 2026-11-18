@@ -55,9 +55,9 @@
 @media not all and (min-width: 768px) {
   .frame {
     position: fixed;
-    top: var(--app-viewport-top, 0px);
+    top: 0;
     bottom: auto;
-    /* 原生给键盘高度时直接扣掉，vivo 这类不缩 visualViewport 的机器也能顶起来 */
-    height: var(--app-viewport-height, calc(100dvh - var(--ime-bottom, 0px)));
+    /* 键盘高度由安卓原生下发；网页端变量恒为 0，等价于 100dvh */
+    height: calc(100dvh - var(--ime-bottom, 0px));
   }
 }
