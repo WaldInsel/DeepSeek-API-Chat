@@ -146,7 +146,10 @@ public class MainActivity extends BridgeActivity {
     View decorView = getWindow().getDecorView();
     decorView.getWindowVisibleDisplayFrame(visibleFrame);
     int hidden = Math.max(0, decorView.getRootView().getHeight() - visibleFrame.bottom);
-    int keyboard = Math.max(imeInset, toCssPixels(hidden));
+    // 可见区域和 ime insets 都是从屏幕底边算起的；页面底部已经用 --safe-bottom
+    // 预留了导航栏（小白条），这里要扣掉它：键盘收起时高度归零，内容才能延伸
+    // 到屏幕底端，键盘弹出时输入框也正好贴在键盘顶部。
+    int keyboard = Math.max(0, Math.max(imeInset, toCssPixels(hidden)) - safeBottom);
     if (force || keyboard != imeBottom) {
       imeBottom = keyboard;
       dispatchInsets();
