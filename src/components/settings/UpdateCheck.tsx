@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { isCapacitor, isTauri } from '../../app/platform.js'
 import { openExternal } from '../../app/systemBars.js'
 import { useTranslate, type TranslationKey } from '../../i18n/index.js'
 import {
@@ -30,6 +31,11 @@ export const UpdateCheck = () => {
   const [checking, setChecking] = useState(false)
   const [current, setCurrent] = useState(appVersion)
   const [latest, setLatest] = useState('')
+
+  // 网页版不提供更新检查，只有桌面端和移动端 App 显示这一项。
+  if (!isTauri() && !isCapacitor()) {
+    return null
+  }
 
   const runCheck = async () => {
     setChecking(true)
