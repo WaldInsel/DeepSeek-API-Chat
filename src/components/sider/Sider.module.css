@@ -121,6 +121,18 @@
   }
 }
 
+/* 落在置顶分组与下方分组的 16px 间距中间，不额外占高度 */
+.sectionDivider::after {
+  content: '';
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 10px;
+  left: 10px;
+  height: 1px;
+  background-color: var(--dsw-alias-border-l1);
+  pointer-events: none;
+}
+
 .sectionHeader {
   position: sticky;
   top: 0;

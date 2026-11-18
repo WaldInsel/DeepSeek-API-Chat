@@ -6,7 +6,7 @@ const DAY = 86_400_000
 
 const startOfDay = (time: number) => new Date(time).setHours(0, 0, 0, 0)
 
-const PINNED_GROUP_KEY = 'sessionHistoryTimelineLabelPinned' as const
+export const PINNED_GROUP_KEY = 'sessionHistoryTimelineLabelPinned' as const
 
 /** 分组：置顶 / 今天 / 昨天 / 7 天内 / 30 天内 / 按月 */
 export const groupSessions = (

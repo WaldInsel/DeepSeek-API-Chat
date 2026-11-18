@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTranslate } from '../../i18n/index.js'
 import { IconPanelLeftOutline16, IconSettingsOutline16, NewChatIcon } from '../base/icons.js'
 import { setSiderCollapsed } from '../../services/settings.js'
-import { groupSessions } from '../../services/chat/sessionGroups.js'
+import { groupSessions, PINNED_GROUP_KEY } from '../../services/chat/sessionGroups.js'
 import { usePinnedSessions } from '../../services/chat/pinned.js'
 import { newChat, removeSession, useChatStore } from '../../services/chat/store.js'
 import type { SessionSummary } from '../../services/chat/types.js'
@@ -90,20 +90,27 @@ export const Sider = ({
       </button>
       <div className={styles.listWrap}>
         <div className={styles.list}>
-          {groups.map((group) => (
-            <div key={group.key} className={styles.section}>
-              <div className={styles.sectionHeader}>{group.label}</div>
-              {group.sessions.map((session) => (
-                <SessionItem
-                  key={session.id}
-                  session={session}
-                  active={session.id === activeId}
-                  pinned={pinnedIds.includes(session.id)}
-                  onDelete={() => setDeleting(session)}
-                />
-              ))}
-            </div>
-          ))}
+          {groups.map((group, index) => {
+            // 置顶分组下面还有内容时，在两者的间距中间加一条浅灰分割线
+            const divider = group.key === PINNED_GROUP_KEY && index < groups.length - 1
+            return (
+              <div
+                key={group.key}
+                className={clsx(styles.section, divider && styles.sectionDivider)}
+              >
+                <div className={styles.sectionHeader}>{group.label}</div>
+                {group.sessions.map((session) => (
+                  <SessionItem
+                    key={session.id}
+                    session={session}
+                    active={session.id === activeId}
+                    pinned={pinnedIds.includes(session.id)}
+                    onDelete={() => setDeleting(session)}
+                  />
+                ))}
+              </div>
+            )
+          })}
         </div>
       </div>
       <div className={styles.bottom}>
