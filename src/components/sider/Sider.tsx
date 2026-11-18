@@ -4,6 +4,7 @@ import { useTranslate } from '../../i18n/index.js'
 import { IconPanelLeftOutline16, IconSettingsOutline16, NewChatIcon } from '../base/icons.js'
 import { setSiderCollapsed } from '../../services/settings.js'
 import { groupSessions } from '../../services/chat/sessionGroups.js'
+import { usePinnedSessions } from '../../services/chat/pinned.js'
 import { newChat, removeSession, useChatStore } from '../../services/chat/store.js'
 import type { SessionSummary } from '../../services/chat/types.js'
 import { Button } from '../base/Button.js'
@@ -30,7 +31,8 @@ export const Sider = ({
   const sessions = useChatStore((state) => state.sessions)
   const activeId = useChatStore((state) => state.activeId)
   const [now, setNow] = useState(Date.now)
-  const groups = useMemo(() => groupSessions(sessions, now, t), [sessions, now, t])
+  const pinnedIds = usePinnedSessions((state) => state.ids)
+  const groups = useMemo(() => groupSessions(sessions, now, t, pinnedIds), [sessions, now, t, pinnedIds])
   const [deleting, setDeleting] = useState<SessionSummary | null>(null)
   const [deletePending, setDeletePending] = useState(false)
 
@@ -96,6 +98,7 @@ export const Sider = ({
                   key={session.id}
                   session={session}
                   active={session.id === activeId}
+                  pinned={pinnedIds.includes(session.id)}
                   onDelete={() => setDeleting(session)}
                 />
               ))}

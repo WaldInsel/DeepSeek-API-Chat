@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { createId } from '../../utils/id.js'
+import { prunePinnedSessions, removePinnedSession } from './pinned.js'
 import { ApiError, streamMessage } from '../api/client.js'
 import type { ChatModel, CreateMessageRequest } from '../api/types.js'
 import { extractFileIds, getFileErrorCode, isRetryableApiError } from '../api/errors.js'
@@ -441,6 +442,7 @@ export const replaceHistory = async (
       sessionSaveErrors: {},
       activeId: null,
     })
+    prunePinnedSessions(new Set(summaries.map((session) => session.id)))
     return summaries.length
   } finally {
     set({ importingHistory: false })
@@ -537,6 +539,7 @@ const removeSessionData = async (id: string): Promise<boolean> => {
       ),
       activeId: state.activeId === id ? null : state.activeId,
     }))
+    removePinnedSession(id)
     return true
   } catch (error) {
     db.reportStorageError('delete session')(error)

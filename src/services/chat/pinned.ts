@@ -1,0 +1,52 @@
+import { create } from 'zustand'
+
+const KEY = 'deepseek-api-chat:pinned-sessions'
+
+const read = (): string[] => {
+  try {
+    const value: unknown = JSON.parse(localStorage.getItem(KEY) ?? '[]')
+    return Array.isArray(value)
+      ? [...new Set(value.filter((id): id is string => typeof id === 'string'))]
+      : []
+  } catch {
+    return []
+  }
+}
+
+const write = (ids: string[]) => {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(ids))
+  } catch {
+    // 无法持久化时只保留本次打开期间的置顶状态。
+  }
+}
+
+/** 置顶会话 id，顺序即列表里的展示顺序；会话正文与摘要仍存在 IndexedDB。 */
+export const usePinnedSessions = create(() => ({ ids: read() }))
+
+const apply = (ids: string[]) => {
+  write(ids)
+  usePinnedSessions.setState({ ids })
+}
+
+/** 新置顶的排在最前。 */
+export const togglePinnedSession = (id: string) => {
+  const ids = usePinnedSessions.getState().ids
+  apply(ids.includes(id) ? ids.filter((item) => item !== id) : [id, ...ids])
+}
+
+export const removePinnedSession = (id: string) => {
+  const ids = usePinnedSessions.getState().ids
+  if (ids.includes(id)) {
+    apply(ids.filter((item) => item !== id))
+  }
+}
+
+/** 删除或覆盖导入后清掉已经不存在的会话 id。 */
+export const prunePinnedSessions = (existingIds: ReadonlySet<string>) => {
+  const ids = usePinnedSessions.getState().ids
+  const next = ids.filter((id) => existingIds.has(id))
+  if (next.length !== ids.length) {
+    apply(next)
+  }
+}
