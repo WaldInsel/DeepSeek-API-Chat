@@ -286,6 +286,9 @@
   /* 面板铺满整屏，安全区留白放在面板内部：灰色一直顶到屏幕上沿和小白条下方 */
   padding-top: calc(6px + var(--safe-top));
   padding-bottom: var(--safe-bottom);
+  /* 抽屉从左侧滑出，右侧上下角圆角让面板边界更柔和 */
+  border-radius: 0 16px 16px 0;
+  overflow: hidden;
 
   .listWrap {
     margin-top: 16px;
