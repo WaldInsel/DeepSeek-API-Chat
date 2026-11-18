@@ -48,7 +48,7 @@ export const Menu = ({
               className={styles.menu}
               data-state={visible ? 'open' : 'closed'}
               data-side={side}
-              style={lastPosition.current ?? undefined}
+              style={lastPosition.current ?? { top: 0, left: 0, visibility: 'hidden' }}
               role="menu"
             >
               {options.map((option) => (

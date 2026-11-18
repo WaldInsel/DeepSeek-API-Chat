@@ -22,7 +22,10 @@
     }
 
     &:hover,
-    &.active {
+    &.active,
+    /* 菜单打开时鼠标会移到菜单上，仍需保持触发按钮可见，
+       否则锚点被隐藏会让菜单失去定位而跳到左上角 */
+    &:has(.action [aria-expanded='true']) {
       .action {
         display: flex;
       }
