@@ -95,10 +95,7 @@ export const en = {
   settingsTtsVoice: 'Read-aloud voice',
   settingsTtsVoiceStella: 'Stella (female)',
   settingsTtsVoiceTide: 'Tide (male)',
-  settingsLocation: 'Location',
-  settingsLocationProvince: 'Select province/region',
-  settingsLocationCity: 'Select city',
-  settingsLocationRegion: 'Select country or region',
+
   settingDialogAsideGeneralOptionLabel: 'General',
   settingDialogAsideDataOptionLabel: 'Data',
   avatarMenuSettingsDialogThemeItemLabel: 'Theme',

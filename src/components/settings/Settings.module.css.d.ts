@@ -10,15 +10,7 @@ declare const styles: {
   readonly "text": string;
   readonly "label": string;
   readonly "uploadButton": string;
-  readonly "locationCell": string;
-  readonly "locationSelectors": string;
-  readonly "provinceSelect": string;
-  readonly "citySelect": string;
-  readonly "regionSelect": string;
-  readonly "theme": string;
-  readonly "themeOptions": string;
-  readonly "themeOption": string;
-  readonly "themeOptionSelected": string;
+
   readonly "description": string;
   readonly "error": string;
   readonly "apiKey": string;

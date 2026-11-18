@@ -90,10 +90,7 @@ export const zh = {
   settingsTtsVoice: '朗读音色',
   settingsTtsVoiceStella: '海星（女声）',
   settingsTtsVoiceTide: '暗潮（男声）',
-  settingsLocation: '位置信息',
-  settingsLocationProvince: '请选择省份/地区',
-  settingsLocationCity: '请选择市',
-  settingsLocationRegion: '请选择国家或地区',
+
   settingDialogAsideGeneralOptionLabel: '通用设置',
   settingDialogAsideDataOptionLabel: '数据管理',
   avatarMenuSettingsDialogThemeItemLabel: '主题',

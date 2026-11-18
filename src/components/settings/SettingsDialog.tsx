@@ -1,11 +1,8 @@
 import clsx from 'clsx'
 import { useRef, useState, type ReactNode } from 'react'
 import {
-  IconDarkOutline16,
   IconDataOutline16,
   IconDownloadOutline16,
-  IconFollowsystemOutline16,
-  IconLightOutline16,
   IconSettingsOutline16,
   IconUploadOutline14,
 } from '../base/icons.js'
@@ -18,11 +15,8 @@ import {
 import { isCapacitor, isTauri } from '../../app/platform.js'
 import { useIsMobile } from '../../app/viewport.js'
 import { useChatStore } from '../../services/chat/store.js'
-import { regionCodes, getRegionName, provinces } from '../../services/location.js'
 import {
-  isChineseBrowser,
   setLocale,
-  setLocation,
   setThemePreference,
   setTtsVoice,
   useSettings,
@@ -39,7 +33,7 @@ import { closeSettings, useSettingsDialog, type SettingsSection } from './settin
 import styles from './Settings.module.css'
 
 /**
- * 设置弹窗：分「通用设置」（主题、语言、朗读音色、位置）与「数据管理」（API Key、导入、导出、删除）。
+ * 设置弹窗：分「通用设置」（主题、语言、朗读音色）与「数据管理」（API Key、导入、导出、删除）。
  * 桌面端为居中弹窗、左侧导航；移动端为底部弹层、导航横排在内容上方
  */
 export const SettingsDialog = () => {
@@ -104,7 +98,7 @@ const SettingsContent = ({ state }: { state: 'open' | 'closed' }) => {
               <ThemeSetting />
               <LocaleSetting />
               <TtsVoiceSetting />
-              <LocationSetting />
+
             </>
           ) : (
             <>
@@ -210,69 +204,6 @@ const useHistoryDelete = () => {
   }
 }
 
-const LocationSetting = () => {
-  const t = useTranslate()
-  const locale = useSettings((state) => state.locale)
-  const location = useSettings((state) => state.location)
-  const province =
-    location?.region === 'CN'
-      ? provinces.find((item) => item.code === location.province)
-      : undefined
-
-  return (
-    <SettingCell
-      label={t('settingsLocation')}
-      status={null}
-      className={styles.locationCell}
-      action={
-        <div className={styles.locationSelectors}>
-          {isChineseBrowser() ? (
-            <>
-              <Select
-                ariaLabel={t('settingsLocationProvince')}
-                className={styles.provinceSelect}
-                value={province?.code ?? ''}
-                placeholder={t('settingsLocationProvince')}
-                options={provinces.map((item) => ({ value: item.code, label: item.name }))}
-                onChange={(value) => {
-                  if (value !== province?.code) {
-                    setLocation({ region: 'CN', province: value })
-                  }
-                }}
-              />
-              <Select
-                ariaLabel={t('settingsLocationCity')}
-                className={styles.citySelect}
-                value={province ? (location?.city ?? '') : ''}
-                disabled={!province?.cities.length}
-                placeholder={t('settingsLocationCity')}
-                options={
-                  province?.cities.map((item) => ({ value: item.code, label: item.name })) ?? []
-                }
-                onChange={(value) => {
-                  if (province) {
-                    setLocation({ region: 'CN', province: province.code, city: value })
-                  }
-                }}
-              />
-            </>
-          ) : (
-            <Select
-              ariaLabel={t('settingsLocationRegion')}
-              className={styles.regionSelect}
-              value={location?.region ?? ''}
-              placeholder={t('settingsLocationRegion')}
-              options={regionCodes
-                .map((code) => ({ value: code, label: getRegionName(code, locale) }))
-                .sort((a, b) => a.label.localeCompare(b.label, locale))}
-              onChange={(value) => setLocation({ region: value })}
-            />
-          )}
-        </div>
-      }
-    />
-  )
-}
 
 const LocaleSetting = () => {
   const t = useTranslate()
@@ -347,54 +278,29 @@ const ImportConfirm = ({
   )
 }
 
-const themeOptions: { value: ThemePreference; label: TranslationKey; icon: ReactNode }[] = [
-  {
-    value: 'light',
-    label: 'avatarMenuSettingsDialogThemeSelectLightOption',
-    icon: <IconLightOutline16 />,
-  },
-  {
-    value: 'dark',
-    label: 'avatarMenuSettingsDialogThemeSelectDarkOption',
-    icon: <IconDarkOutline16 />,
-  },
-  {
-    value: 'system',
-    label: 'avatarMenuSettingsDialogThemeSelectSystemOption',
-    icon: <IconFollowsystemOutline16 />,
-  },
+const themeOptions: { value: ThemePreference; label: TranslationKey }[] = [
+  { value: 'light', label: 'avatarMenuSettingsDialogThemeSelectLightOption' },
+  { value: 'dark', label: 'avatarMenuSettingsDialogThemeSelectDarkOption' },
+  { value: 'system', label: 'avatarMenuSettingsDialogThemeSelectSystemOption' },
 ]
 
-/**
- * 主题项：标题下方浅色 / 深色 / 跟随系统三个选块。
- * 与下方语言选项连续排列。
- */
+/** 主题项：与语言、朗读音色、位置一致，用下拉框选择，未保存时默认跟随系统。 */
 const ThemeSetting = () => {
   const t = useTranslate()
   const themePreference = useSettings((state) => state.themePreference)
-  const label = t('avatarMenuSettingsDialogThemeItemLabel')
   return (
-    <div className={styles.theme}>
-      {label}
-      <div role="radiogroup" aria-label={label} className={styles.themeOptions}>
-        {themeOptions.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            role="radio"
-            aria-checked={themePreference === option.value}
-            className={clsx(
-              styles.themeOption,
-              themePreference === option.value && styles.themeOptionSelected
-            )}
-            onClick={() => setThemePreference(option.value)}
-          >
-            {option.icon}
-            {t(option.label)}
-          </button>
-        ))}
-      </div>
-    </div>
+    <SettingCell
+      label={t('avatarMenuSettingsDialogThemeItemLabel')}
+      status={null}
+      action={
+        <Select
+          ariaLabel={t('avatarMenuSettingsDialogThemeItemLabel')}
+          value={themePreference}
+          options={themeOptions.map((option) => ({ value: option.value, label: t(option.label) }))}
+          onChange={setThemePreference}
+        />
+      }
+    />
   )
 }
 
