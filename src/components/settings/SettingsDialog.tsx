@@ -104,8 +104,8 @@ const SettingsContent = ({ state }: { state: 'open' | 'closed' }) => {
             <>
               <ThemeSetting />
               <LocaleSetting />
-              <TtsVoiceSetting />
               <ThinkingCollapseSetting />
+              <TtsVoiceSetting />
 
             </>
           ) : (
