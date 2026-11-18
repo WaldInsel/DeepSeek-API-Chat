@@ -10,7 +10,7 @@ export const zh = {
   chatModeFlash: '快速模式',
   chatModePro: '专家模式',
   chatModeFlashHint: '适合日常对话，及时响应',
-  chatModeProHint: '适合专业知识，不支持识别图片',
+  chatModeProHint: '擅长复杂问题，不支持识别图片',
   contentCaveat: '内容由 AI 生成，请仔细甄别',
   expandSiderbarButton: '打开边栏',
   collapseSiderbarButton: '收起边栏',

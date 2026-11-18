@@ -12,7 +12,7 @@ export const en = {
   chatModeFlash: 'Fast',
   chatModePro: 'Expert',
   chatModeFlashHint: 'For everyday conversations, quick responses',
-  chatModeProHint: 'For professional knowledge, no image input',
+  chatModeProHint: 'Good at complex questions, no image input',
   contentCaveat: 'AI-generated, for reference only',
   expandSiderbarButton: 'Open sidebar',
   collapseSiderbarButton: 'Close sidebar',
