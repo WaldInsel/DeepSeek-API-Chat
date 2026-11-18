@@ -33,7 +33,7 @@ if (existsSync(androidIcons) && existsSync(androidRes)) {
 
 // 全面屏适配：声明应用自己处理状态栏与手势条，并把真实安全区交给页面。
 // WebView 的 env(safe-area-inset-*) 在安卓上大多返回 0（尤其是底部导航栏），
-// 所以由原生读出 WindowInsets，通过 SystemBars 接口和 window.__applySystemInsets 下发。
+// 所以由原生读出 WindowInsets，通过 SystemBars 接口和 window.__applySystemLayout 下发。
 const mainActivitySource = (packageName) => `package ${packageName};
 
 import android.content.Intent;
@@ -61,8 +61,9 @@ public class MainActivity extends BridgeActivity {
 
   private int safeTop = 0;
   private int safeBottom = 0;
-  private int imeBottom = 0;
-  private int imeInset = 0;
+  private int pageSafeBottom = 0;
+  private int frameHeight = 0;
+  private int imeInsetPx = 0;
   private final Rect visibleFrame = new Rect();
 
   @Override
@@ -93,14 +94,14 @@ public class MainActivity extends BridgeActivity {
     if (webView != null) {
       webView.addJavascriptInterface(new SystemBars(), "SystemBars");
       // 首次布局时页面还没就绪，补发一次
-      webView.postDelayed(this::dispatchInsets, 1000);
+      webView.postDelayed(this::dispatchLayout, 1000);
     }
 
     View decorView = window.getDecorView();
-    // 老系统（API 30 以下）拿不到 ime insets，靠布局变化和可见区域兜底判断键盘高度
+    // 老系统（API 30 以下）拿不到 ime insets，靠布局变化和可见区域兜底判断键盘
     decorView
         .getViewTreeObserver()
-        .addOnGlobalLayoutListener(() -> refreshKeyboardHeight(false));
+        .addOnGlobalLayoutListener(() -> refreshLayout(false));
 
     ViewCompat.setOnApplyWindowInsetsListener(
         decorView,
@@ -116,8 +117,8 @@ public class MainActivity extends BridgeActivity {
           boolean systemBarsChanged = top != safeTop || bottom != safeBottom;
           safeTop = top;
           safeBottom = bottom;
-          imeInset = toCssPixels(insets.getInsets(WindowInsetsCompat.Type.ime()).bottom);
-          refreshKeyboardHeight(systemBarsChanged);
+          imeInsetPx = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom;
+          refreshLayout(systemBarsChanged);
           return insets;
         });
   }
@@ -127,7 +128,7 @@ public class MainActivity extends BridgeActivity {
   public void onResume() {
     super.onResume();
     // 从后台回来时视口可能变了（分屏、旋转），补发一次
-    dispatchInsets();
+    refreshLayout(true);
   }
 
   /** 物理像素换算成页面用的 CSS 像素（等于 dp）。 */
@@ -135,39 +136,53 @@ public class MainActivity extends BridgeActivity {
     return Math.round(pixels / getResources().getDisplayMetrics().density);
   }
 
+  private int dpToPx(int dp) {
+    return Math.round(dp * getResources().getDisplayMetrics().density);
+  }
+
   /**
-   * 页面需要额外让出的键盘高度。Android 11+ 直接读 ime insets；更老的系统
-   * 以及部分把键盘交给系统处理的 ROM（oppo / vivo / 华为）拿不到 ime insets，
-   * 改用「根视图高度 - 可见区域底边」兜底，两条路取较大值。
-   * 窗口已经被输入法 resize 时根视图本身变矮，这里算出的值接近 0，
-   * 页面高度由 100dvh 自动跟随，不会重复扣减。
+   * 直接把「页面应该显示多高」算好下发，页面不用再拿 100dvh 做减法。
+   * 键盘高度优先读 ime insets（Android 11+）；更老的系统以及把键盘交给
+   * 系统处理的 ROM（oppo / vivo / 华为）拿不到 ime insets，用「根视图高度 -
+   * 可见区域底边」兜底，两条路取较大值。不足 120dp 的变化不算键盘，
+   * 避免导航栏、手势条的高度被误判成键盘，把页面永久砍掉一截。
    */
-  private void refreshKeyboardHeight(boolean force) {
+  private void refreshLayout(boolean force) {
     View decorView = getWindow().getDecorView();
     decorView.getWindowVisibleDisplayFrame(visibleFrame);
-    int hidden = Math.max(0, decorView.getRootView().getHeight() - visibleFrame.bottom);
-    // 可见区域和 ime insets 都是从屏幕底边算起的；页面底部已经用 --safe-bottom
-    // 预留了导航栏（小白条），这里要扣掉它：键盘收起时高度归零，内容才能延伸
-    // 到屏幕底端，键盘弹出时输入框也正好贴在键盘顶部。
-    int keyboard = Math.max(0, Math.max(imeInset, toCssPixels(hidden)) - safeBottom);
-    if (force || keyboard != imeBottom) {
-      imeBottom = keyboard;
-      dispatchInsets();
+    int rootPx = decorView.getRootView().getHeight();
+    int measuredPx = visibleFrame.bottom > 0 ? Math.max(0, rootPx - visibleFrame.bottom) : 0;
+    // 窗口已经被输入法 resize 时可见区域跟着缩，measuredPx 接近 0；
+    // 个别 ROM 仍会同时派发 ime insets，这时以「窗口已缩」为准，避免页面扣两次。
+    int screenPx = getResources().getDisplayMetrics().heightPixels;
+    boolean resizedWithIme =
+        measuredPx == 0 && imeInsetPx >= dpToPx(120) && screenPx - rootPx >= dpToPx(120);
+    int keyboardPx = resizedWithIme ? 0 : Math.max(measuredPx, imeInsetPx);
+    boolean keyboardVisible = keyboardPx >= dpToPx(120);
+
+    int nextFrame = toCssPixels(Math.max(0, rootPx - keyboardPx));
+    // 键盘弹出时导航栏被键盘盖住，页面不用再给它留白；收起时恢复，
+    // 输入框停在小白条上方，背景一直铺到屏幕底端。
+    int nextSafeBottom = keyboardVisible ? 0 : safeBottom;
+    if (force || nextFrame != frameHeight || nextSafeBottom != pageSafeBottom) {
+      frameHeight = nextFrame;
+      pageSafeBottom = nextSafeBottom;
+      dispatchLayout();
     }
   }
 
-  private void dispatchInsets() {
+  private void dispatchLayout() {
     WebView webView = getBridge() == null ? null : getBridge().getWebView();
     if (webView == null) {
       return;
     }
     String script =
-        "window.__applySystemInsets&&window.__applySystemInsets("
+        "window.__applySystemLayout&&window.__applySystemLayout("
             + safeTop
             + ", "
-            + safeBottom
+            + pageSafeBottom
             + ", "
-            + imeBottom
+            + frameHeight
             + ")";
     webView.post(() -> webView.evaluateJavascript(script, null));
   }
@@ -187,10 +202,9 @@ public class MainActivity extends BridgeActivity {
       return "{\\"top\\":"
           + safeTop
           + ",\\"bottom\\":"
-          + safeBottom
-          + ",\\"ime\\":"
-          + imeBottom
-
+          + pageSafeBottom
+          + ",\\"frame\\":"
+          + frameHeight
           + "}";
     }
 

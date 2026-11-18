@@ -6,8 +6,7 @@
      推进屏幕中间，四周露出页面底色，看起来就是悬浮卡片。 */
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  /* 键盘高度，仅安卓由原生注入；0 表示键盘收起 */
-  --ime-bottom: 0px;
+
 }
 
 @media (max-width: 1023px) {

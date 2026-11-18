@@ -57,7 +57,7 @@
     position: fixed;
     top: 0;
     bottom: auto;
-    /* 键盘高度由安卓原生下发；网页端变量恒为 0，等价于 100dvh */
-    height: calc(100dvh - var(--ime-bottom, 0px));
+    /* 安卓由原生下发页面应显示的高度；网页端没有桥接，用 100dvh 兜底 */
+    height: var(--app-frame-height, 100dvh);
   }
 }
