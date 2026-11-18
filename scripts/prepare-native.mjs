@@ -180,12 +180,17 @@ public class MainActivity extends BridgeActivity {
     // 窗口已经被输入法 resize 时可见区域跟着缩，measuredPx 接近 0；
     // 个别 ROM 仍会同时派发 ime insets，这时以「窗口已缩」为准，避免页面扣两次。
     int screenPx = getResources().getDisplayMetrics().heightPixels;
+    boolean windowShrunk = screenPx - rootPx >= dpToPx(120);
     boolean resizedWithIme =
-        measuredPx == 0 && imeInsetPx >= dpToPx(120) && screenPx - rootPx >= dpToPx(120);
+        measuredPx == 0 && imeInsetPx >= dpToPx(120) && windowShrunk;
     int keyboardPx = resizedWithIme ? 0 : Math.max(measuredPx, imeInsetPx);
     boolean keyboardVisible = keyboardPx >= dpToPx(120);
 
-    int nextFrame = toCssPixels(Math.max(0, rootPx - keyboardPx));
+    // 键盘收起时按整屏高度铺满，保证内容延伸到屏幕底端（含小白条区域）；
+    // 分屏、自由窗口下窗口本身比屏幕小，仍然用根视图高度。
+    int restFramePx = windowShrunk ? rootPx : Math.max(rootPx, screenPx);
+    int nextFrame =
+        toCssPixels(keyboardVisible ? Math.max(0, rootPx - keyboardPx) : restFramePx);
     // 键盘弹出时导航栏被键盘盖住，页面不用再给它留白；收起时恢复，
     // 输入框停在小白条上方，背景一直铺到屏幕底端。
     int nextSafeBottom = keyboardVisible ? 0 : safeBottom;

@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import clsx from 'clsx'
 import { useTranslate } from '../i18n/index.js'
 import { useSettings } from '../services/settings.js'
-import { useIsMobile, usePreventPageScroll } from './viewport.js'
+import { useIsMobile, useNativeKeyboardFallback, usePreventPageScroll } from './viewport.js'
 import { setupSystemBars } from './systemBars.js'
 import { setupUpdateCheck } from '../services/update.js'
 import {
@@ -50,6 +50,8 @@ export const App = () => {
     state.activeId === null ? false : state.sessionLoadErrors[state.activeId] === true
   )
 
+  const frameRef = useNativeKeyboardFallback(isMobile)
+
   const streaming = useChatStore((state) =>
     state.activeId === null ? false : Object.hasOwn(state.streaming, state.activeId)
   )
@@ -93,7 +95,7 @@ export const App = () => {
 
   return (
     <>
-      <div className={clsx(styles.frame, 'app-frame')}>
+      <div ref={frameRef} className={clsx(styles.frame, 'app-frame')}>
         {isMobile ? <MobileSider /> : <Sider collapsed={siderCollapsed} />}
         <main className={styles.main}>
           {saveError ? (
