@@ -66,14 +66,24 @@ export const syncSystemBarIcons = (dark: boolean) => {
   window.SystemBars?.setDarkIcons(dark)
 }
 
-/** 外部链接优先交给安卓原生系统浏览器，网页端退回 window.open */
+/** 外部链接优先交给安卓原生系统浏览器；桌面/网页端用真实 <a> 点击，避免 window.open 被 WebView 拦截 */
 export const openExternal = (url: string) => {
-  const bridge = window.SystemBars?.openExternal
-  if (bridge) {
-    bridge(url)
-    return
+  if (window.SystemBars?.openExternal) {
+    try {
+      // 必须带着 SystemBars 调用，不能把方法拆出来单独执行
+      window.SystemBars.openExternal(url)
+      return
+    } catch {
+      // 桥接不可用时继续走原生链接
+    }
   }
-  window.open(url, '_blank', 'noopener,noreferrer')
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.target = '_blank'
+  anchor.rel = 'noreferrer'
+  document.body.appendChild(anchor)
+  anchor.click()
+  anchor.remove()
 }
 
 /** 接管全面屏留白；网页端没有桥接，保持 CSS 里的 env() 兜底 */

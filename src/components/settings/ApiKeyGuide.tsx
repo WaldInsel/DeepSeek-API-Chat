@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react'
+import { pushBackHandler } from '../../app/backStack.js'
 import { openExternal } from '../../app/systemBars.js'
 import { useTranslate, type TranslationKey } from '../../i18n/index.js'
 import { IconArrowLeftOutline16, IconRightUpOutline14 } from '../base/icons.js'
+import { usePresence } from '../base/usePresence.js'
 import { closeApiGuide, useApiGuide } from './apiGuideState.js'
 import styles from './ApiKeyGuide.module.css'
 
@@ -41,6 +43,7 @@ const STEPS: {
 export const ApiKeyGuide = () => {
   const t = useTranslate()
   const open = useApiGuide((state) => state.open)
+  const { mounted, visible } = usePresence(open)
   const pageRef = useRef<HTMLDivElement>(null)
   const previousFocus = useRef<HTMLElement | null>(null)
 
@@ -51,22 +54,35 @@ export const ApiKeyGuide = () => {
     previousFocus.current =
       document.activeElement instanceof HTMLElement ? document.activeElement : null
     pageRef.current?.focus()
+    return () => previousFocus.current?.focus()
+  }, [open])
+
+  useEffect(() => {
+    if (!mounted) {
+      return
+    }
+    // 退出动画期间继续拦截返回和 Esc，避免把下面的设置一起关掉
+    return pushBackHandler(closeApiGuide)
+  }, [mounted])
+
+  useEffect(() => {
+    if (!mounted) {
+      return
+    }
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') {
         return
       }
-      // 设置弹窗也监听 Esc，这里拦住，避免一起关掉
       event.stopPropagation()
-      closeApiGuide()
+      if (open) {
+        closeApiGuide()
+      }
     }
     document.addEventListener('keydown', onKeyDown, true)
-    return () => {
-      document.removeEventListener('keydown', onKeyDown, true)
-      previousFocus.current?.focus()
-    }
-  }, [open])
+    return () => document.removeEventListener('keydown', onKeyDown, true)
+  }, [mounted, open])
 
-  if (!open) {
+  if (!mounted) {
     return null
   }
 
@@ -74,6 +90,7 @@ export const ApiKeyGuide = () => {
     <div
       ref={pageRef}
       className={styles.page}
+      data-state={visible ? 'open' : 'closed'}
       role="dialog"
       aria-modal="true"
       aria-label={t('apiKeyGuideTitle')}

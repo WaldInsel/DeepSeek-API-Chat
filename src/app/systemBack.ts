@@ -2,6 +2,7 @@ import { closeSearchPanel, useSearchPanel } from '../components/search/searchPan
 import { closeApiGuide, useApiGuide } from '../components/settings/apiGuideState.js'
 import { closeSettings, useSettingsDialog } from '../components/settings/settingsDialogState.js'
 import { closeMobileSider, useMobileSider } from '../components/sider/mobileSiderState.js'
+import { runBackHandler } from './backStack.js'
 
 declare global {
   interface Window {
@@ -12,6 +13,10 @@ declare global {
 
 /** 依次关闭指引、设置、搜索结果与对话列表；全部关闭后返回 false，由原生退出应用。 */
 export const handleSystemBack = (): boolean => {
+  // 先关浮层注册的返回处理器：更新弹窗、API 指引等只关自己
+  if (runBackHandler()) {
+    return true
+  }
   if (useApiGuide.getState().open) {
     closeApiGuide()
     return true

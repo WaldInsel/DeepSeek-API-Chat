@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { isCapacitor, isTauri } from '../app/platform.js'
+import { openExternal } from '../app/systemBars.js'
 
 const REPOSITORY = 'ckckh2023/DeepSeek-API-Chat'
 export const RELEASES_URL = `https://github.com/${REPOSITORY}/releases/latest`
@@ -110,11 +111,5 @@ export const setupUpdateCheck = () => {
   return () => window.clearTimeout(timer)
 }
 
-/** 跳转 Releases；安卓走原生 Intent，桌面端交给系统浏览器 */
-export const openReleases = () => {
-  if (isCapacitor() && window.SystemBars?.openExternal) {
-    window.SystemBars.openExternal(RELEASES_URL)
-    return
-  }
-  window.open(RELEASES_URL, '_blank', 'noopener,noreferrer')
-}
+/** 跳转 Releases：和页面里的普通外链一样，交给系统/WebView 打开 */
+export const openReleases = () => openExternal(RELEASES_URL)

@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { pushBackHandler } from '../../app/backStack.js'
 import { isCapacitor, isTauri } from '../../app/platform.js'
 import { openExternal } from '../../app/systemBars.js'
 import { useTranslate, type TranslationKey } from '../../i18n/index.js'
@@ -13,6 +14,7 @@ import {
 } from '../../services/update.js'
 import { Button } from '../base/Button.js'
 import { Modal } from '../base/Modal.js'
+import { usePresence } from '../base/usePresence.js'
 import { IconRightUpOutline14 } from '../base/icons.js'
 import settingsStyles from './Settings.module.css'
 import styles from './UpdateCheck.module.css'
@@ -31,6 +33,15 @@ export const UpdateCheck = () => {
   const [checking, setChecking] = useState(false)
   const [current, setCurrent] = useState(appVersion)
   const [latest, setLatest] = useState('')
+  const { mounted, visible } = usePresence(open)
+
+  useEffect(() => {
+    if (!mounted) {
+      return
+    }
+    // 退出动画期间也继续拦截返回，避免把下面的设置一起关掉
+    return pushBackHandler(() => setOpen(false))
+  }, [mounted])
 
   // 网页版不提供更新检查，只有桌面端和移动端 App 显示这一项。
   if (!isTauri() && !isCapacitor()) {
@@ -76,10 +87,11 @@ export const UpdateCheck = () => {
           </Button>
         </div>
       </div>
-      {open ? (
+      {mounted ? (
         <Modal
           title={t('updateDialogTitle')}
           closable
+          state={visible ? 'open' : 'closed'}
           footer={
             <Button variant="outlined" size="m" onClick={() => setOpen(false)}>
               {t('close')}
