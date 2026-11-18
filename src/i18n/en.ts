@@ -98,6 +98,10 @@ export const en = {
   settingsTtsVoice: 'Read-aloud voice',
   settingsTtsVoiceStella: 'Stella (female)',
   settingsTtsVoiceTide: 'Tide (male)',
+  settingsThinkingCollapse: 'Thinking content',
+  settingsThinkingCollapseFull: 'Fully collapsed',
+  settingsThinkingCollapsePartial: 'Partially collapsed',
+  settingsThinkingCollapseNone: 'Expanded',
 
   settingDialogAsideGeneralOptionLabel: 'General',
   settingDialogAsideDataOptionLabel: 'Data',

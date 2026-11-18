@@ -93,6 +93,10 @@ export const zh = {
   settingsTtsVoice: '朗读音色',
   settingsTtsVoiceStella: '海星（女声）',
   settingsTtsVoiceTide: '暗潮（男声）',
+  settingsThinkingCollapse: '思考内容',
+  settingsThinkingCollapseFull: '完全折叠',
+  settingsThinkingCollapsePartial: '部分折叠',
+  settingsThinkingCollapseNone: '不折叠',
 
   settingDialogAsideGeneralOptionLabel: '通用设置',
   settingDialogAsideDataOptionLabel: '数据管理',

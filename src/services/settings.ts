@@ -7,7 +7,10 @@ export type Locale = 'zh-CN' | 'en-US'
 /** 主题偏好；默认跟随系统 */
 export type ThemePreference = 'light' | 'dark' | 'system'
 
-/** 本机设置，存 localStorage：API Key、语言、主题、位置、朗读音色、深度思考与智能搜索开关、侧边栏收起状态 */
+/** 思考内容的呈现方式：完全折叠 / 部分折叠（限高滚动）/ 不折叠 */
+export type ThinkingCollapse = 'full' | 'partial' | 'none'
+
+/** 本机设置，存 localStorage：API Key、语言、主题、位置、朗读音色、深度思考与智能搜索开关、思考折叠、侧边栏收起状态 */
 type Settings = {
   apiKey: string | null
   locale: Locale
@@ -15,6 +18,7 @@ type Settings = {
   location: UserLocation | null
   ttsVoice: TtsVoice
   thinking: boolean
+  thinkingCollapse: ThinkingCollapse
   search: boolean
   siderCollapsed: boolean
 }
@@ -26,6 +30,7 @@ const KEYS = {
   themePreference: 'deepseek-api-chat:theme-preference',
   ttsVoice: 'deepseek-api-chat:tts-voice',
   thinking: 'deepseek-api-chat:thinking',
+  thinkingCollapse: 'deepseek-api-chat:thinking-collapse',
   search: 'deepseek-api-chat:search',
   siderCollapsed: 'deepseek-api-chat:sider-collapsed',
 } as const
@@ -87,6 +92,12 @@ const initialThemePreference = (): ThemePreference => {
 /** 未保存过时使用服务端默认音色 stella（海星） */
 const initialTtsVoice = (): TtsVoice => (read(KEYS.ttsVoice) === 'tide' ? 'tide' : 'stella')
 
+/** 未保存过时部分折叠：思考内容限制在固定高度的窗口内滚动 */
+const initialThinkingCollapse = (): ThinkingCollapse => {
+  const saved = read(KEYS.thinkingCollapse)
+  return saved === 'full' || saved === 'none' ? saved : 'partial'
+}
+
 export const useSettings = create<Settings>(() => ({
   apiKey: read(KEYS.apiKey),
   locale: initialLocale(),
@@ -94,6 +105,7 @@ export const useSettings = create<Settings>(() => ({
   themePreference: initialThemePreference(),
   ttsVoice: initialTtsVoice(),
   thinking: read(KEYS.thinking) === 'true',
+  thinkingCollapse: initialThinkingCollapse(),
   search: read(KEYS.search) === 'true',
   siderCollapsed: read(KEYS.siderCollapsed) === 'true',
 }))
@@ -127,6 +139,11 @@ export const setApiKey = (apiKey: string | null) => {
 export const setThinking = (thinking: boolean) => {
   write(KEYS.thinking, String(thinking))
   useSettings.setState({ thinking })
+}
+
+export const setThinkingCollapse = (thinkingCollapse: ThinkingCollapse) => {
+  write(KEYS.thinkingCollapse, thinkingCollapse)
+  useSettings.setState({ thinkingCollapse })
 }
 
 export const setSearch = (search: boolean) => {

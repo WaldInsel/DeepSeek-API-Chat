@@ -82,6 +82,25 @@
   }
 }
 
+/* 部分折叠：思考内容限制在固定高度的窗口内滚动 */
+.thinkingViewport {
+  max-height: 240px;
+  padding-right: 4px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--dsw-alias-border-l2) transparent;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    border-radius: 2px;
+    background-color: var(--dsw-alias-border-l2);
+  }
+}
+
 .dot {
   position: absolute;
   top: 9px;

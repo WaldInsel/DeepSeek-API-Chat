@@ -1,6 +1,6 @@
 import { useTranslate } from '../../i18n/index.js'
 import clsx from 'clsx'
-import { memo, useEffect, useState, type ReactNode } from 'react'
+import { memo, useEffect, useRef, useState, type ReactNode } from 'react'
 import {
   IconBrowseOutline16,
   IconBrowseWarningOutline16,
@@ -15,6 +15,7 @@ import {
   IconThinkOutline16,
 } from '../base/icons.js'
 import type { AssistantMessage } from '../../services/chat/types.js'
+import { useSettings, type ThinkingCollapse } from '../../services/settings.js'
 import {
   getAreaTitle,
   isDeepSearchKind,
@@ -65,7 +66,11 @@ export const ReplyArea = memo(function ReplyArea({
   hasResponse: boolean
 }) {
   useTranslate()
-  const [open, setOpen] = useState(true)
+  const thinkingCollapse = useSettings((state) => state.thinkingCollapse)
+  // 用户点过标题后以手动状态为准；否则完全折叠时默认收起，其他模式默认展开。
+  const [manualOpen, setManualOpen] = useState<boolean | null>(null)
+  const open = manualOpen ?? thinkingCollapse !== 'full'
+  useEffect(() => setManualOpen(null), [thinkingCollapse])
   const titleActive = streaming && !hasResponse
   useTicker(titleActive, 1000)
   if (view.steps.length === 0 && !(message.thinking && streaming)) {
@@ -78,7 +83,7 @@ export const ReplyArea = memo(function ReplyArea({
   return (
     <div className={styles.area}>
       {title ? (
-        <div className={styles.title} onClick={() => setOpen((value) => !value)}>
+        <div className={styles.title} onClick={() => setManualOpen(!open)}>
           <span className={clsx(styles.titleIcon, stopped && styles.stoppedIcon)}>
             <IconThinkOutline16 />
           </span>
@@ -96,6 +101,7 @@ export const ReplyArea = memo(function ReplyArea({
               sources={view.sources}
               streaming={streaming}
               isLast={index === view.steps.length - 1}
+              thinkingCollapse={thinkingCollapse}
             />
           ))}
         </div>
@@ -115,29 +121,26 @@ const StepItem = ({
   sources,
   streaming,
   isLast,
+  thinkingCollapse,
 }: {
   step: Step
   message: AssistantMessage
   sources: Source[]
   streaming: boolean
   isLast: boolean
+  thinkingCollapse: ThinkingCollapse
 }) => {
   switch (step.type) {
-    case 'thinking': {
-      const lastBlock = step.blocks.at(-1)
-      const thinking =
-        streaming && lastBlock?.startedAt !== undefined && lastBlock.endedAt === undefined
+    case 'thinking':
       return (
-        <ContentItem isLast={isLast} active={thinking}>
-          <Markdown
-            content={step.blocks.map((block) => block.thinking).join('')}
-            loading={thinking}
-            cacheKey={`${message.id}-${step.key}`}
-            disableLink
-          />
-        </ContentItem>
+        <ThinkingRow
+          step={step}
+          message={message}
+          streaming={streaming}
+          isLast={isLast}
+          thinkingCollapse={thinkingCollapse}
+        />
       )
-    }
     case 'text':
       return (
         <ContentItem isLast={isLast} active={false}>
@@ -180,6 +183,78 @@ const ContentItem = ({
     {children}
   </div>
 )
+
+/** 思考内容按设置呈现：部分折叠时限制高度，思考进行中自动跟随到底部。 */
+const ThinkingRow = ({
+  step,
+  message,
+  streaming,
+  isLast,
+  thinkingCollapse,
+}: {
+  step: Extract<Step, { type: 'thinking' }>
+  message: AssistantMessage
+  streaming: boolean
+  isLast: boolean
+  thinkingCollapse: ThinkingCollapse
+}) => {
+  const lastBlock = step.blocks.at(-1)
+  const thinking = streaming && lastBlock?.startedAt !== undefined && lastBlock.endedAt === undefined
+  const text = step.blocks.map((block) => block.thinking).join('')
+  return (
+    <ContentItem isLast={isLast} active={thinking}>
+      <ThinkingViewport mode={thinkingCollapse} active={thinking} text={text}>
+        <Markdown
+          content={text}
+          loading={thinking}
+          cacheKey={`${message.id}-${step.key}`}
+          disableLink
+        />
+      </ThinkingViewport>
+    </ContentItem>
+  )
+}
+
+const ThinkingViewport = ({
+  mode,
+  active,
+  text,
+  children,
+}: {
+  mode: ThinkingCollapse
+  active: boolean
+  text: string
+  children: ReactNode
+}) => {
+  const viewportRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (mode !== 'partial' || !active) {
+      return
+    }
+    // Markdown 渲染有节流，等两帧再滚，确保拿到最新内容高度。
+    let inner = 0
+    const outer = requestAnimationFrame(() => {
+      inner = requestAnimationFrame(() => {
+        const element = viewportRef.current
+        if (element) {
+          element.scrollTop = element.scrollHeight
+        }
+      })
+    })
+    return () => {
+      cancelAnimationFrame(outer)
+      cancelAnimationFrame(inner)
+    }
+  }, [mode, active, text])
+  if (mode !== 'partial') {
+    return <>{children}</>
+  }
+  return (
+    <div ref={viewportRef} className={styles.thinkingViewport}>
+      {children}
+    </div>
+  )
+}
 
 /** 搜索：普通搜索为「已阅读 N 个网页」，边想边搜为「搜索到 N 个网页」，点击打开搜索结果 */
 const SearchRow = ({

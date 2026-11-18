@@ -18,9 +18,11 @@ import { useChatStore } from '../../services/chat/store.js'
 import {
   setLocale,
   setThemePreference,
+  setThinkingCollapse,
   setTtsVoice,
   useSettings,
   type ThemePreference,
+  type ThinkingCollapse,
 } from '../../services/settings.js'
 import { useTranslate, type TranslationKey, type TranslationMessage } from '../../i18n/index.js'
 import { Button } from '../base/Button.js'
@@ -103,6 +105,7 @@ const SettingsContent = ({ state }: { state: 'open' | 'closed' }) => {
               <ThemeSetting />
               <LocaleSetting />
               <TtsVoiceSetting />
+              <ThinkingCollapseSetting />
 
             </>
           ) : (
@@ -249,6 +252,35 @@ const TtsVoiceSetting = () => {
             { value: 'tide', label: t('settingsTtsVoiceTide') },
           ]}
           onChange={setTtsVoice}
+        />
+      }
+    />
+  )
+}
+
+/** 思考内容：完全折叠只保留标题；部分折叠限制高度并在窗口内滚动；不折叠完整展开。 */
+const thinkingCollapseOptions: { value: ThinkingCollapse; label: TranslationKey }[] = [
+  { value: 'full', label: 'settingsThinkingCollapseFull' },
+  { value: 'partial', label: 'settingsThinkingCollapsePartial' },
+  { value: 'none', label: 'settingsThinkingCollapseNone' },
+]
+
+const ThinkingCollapseSetting = () => {
+  const t = useTranslate()
+  const thinkingCollapse = useSettings((state) => state.thinkingCollapse)
+  return (
+    <SettingCell
+      label={t('settingsThinkingCollapse')}
+      status={null}
+      action={
+        <Select
+          ariaLabel={t('settingsThinkingCollapse')}
+          value={thinkingCollapse}
+          options={thinkingCollapseOptions.map((option) => ({
+            value: option.value,
+            label: t(option.label),
+          }))}
+          onChange={setThinkingCollapse}
         />
       }
     />
