@@ -3,9 +3,15 @@ import { isCapacitor, isTauri } from '../app/platform.js'
 
 const REPOSITORY = 'ckckh2023/DeepSeek-API-Chat'
 export const RELEASES_URL = `https://github.com/${REPOSITORY}/releases/latest`
+export const GITEE_RELEASES_URL = `https://gitee.com/${REPOSITORY}/releases/latest`
+export const BAIDU_PAN_URL = 'https://pan.baidu.com/s/1v_7pM502Ek31azc4Zv1uYw?pwd=3141'
+export const PAN123_URL = 'https://1851751239.share.123pan.cn/123pan/XH7Bvd-n9rg'
 const LATEST_RELEASE_API = `https://api.github.com/repos/${REPOSITORY}/releases/latest`
+const GITEE_LATEST_RELEASE_API = `https://gitee.com/api/v5/repos/${REPOSITORY}/releases/latest`
 /** 启动后等半分钟再查，避开首屏渲染和初始化请求 */
 const CHECK_DELAY_MS = 30_000
+/** 每个来源最多等 6 秒；GitHub 失败后再试 Gitee */
+const FETCH_TIMEOUT_MS = 6_000
 
 /** 打包时由 rspack 写进 index.html，见 rspack.config.ts 的 HtmlRspackPlugin meta */
 export const appVersion = (): string =>
@@ -42,10 +48,13 @@ const readTag = (value: unknown): string => {
   return typeof tag === 'string' ? tag.trim() : ''
 }
 
-const fetchLatestVersion = async (): Promise<string> => {
+const fetchTag = async (url: string): Promise<string> => {
+  const controller = new AbortController()
+  const timer = window.setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
   try {
-    const response = await fetch(LATEST_RELEASE_API, {
-      headers: { Accept: 'application/vnd.github+json' },
+    const response = await fetch(url, {
+      headers: { Accept: 'application/json' },
+      signal: controller.signal,
     })
     if (!response.ok) {
       return ''
@@ -53,8 +62,27 @@ const fetchLatestVersion = async (): Promise<string> => {
     return readTag(await response.json())
   } catch {
     return ''
+  } finally {
+    window.clearTimeout(timer)
   }
 }
+
+/** 先查 GitHub；失败或没有可用 tag 时回退到 Gitee。 */
+const fetchLatestVersion = async (): Promise<string> => {
+  const github = await fetchTag(LATEST_RELEASE_API)
+  if (github) {
+    return github
+  }
+  return fetchTag(GITEE_LATEST_RELEASE_API)
+}
+
+export type UpdateCheckResult = { current: string; latest: string }
+
+/** 手动检查：返回当前版本与最新 tag；网络失败时 latest 为空字符串 */
+export const checkLatestVersion = async (): Promise<UpdateCheckResult> => ({
+  current: appVersion(),
+  latest: await fetchLatestVersion(),
+})
 
 type UpdateState = {
   /** 存在比当前更新的版本时是它的 tag，空字符串表示没有更新 */
@@ -65,12 +93,9 @@ type UpdateState = {
 export const useUpdateStore = create<UpdateState>((set) => ({
   latest: '',
   check: async () => {
-    const current = appVersion()
-    const latest = await fetchLatestVersion()
-    if (!current || !latest || compareVersions(latest, current) <= 0) {
-      return
-    }
-    set({ latest })
+    const { current, latest } = await checkLatestVersion()
+    const hasUpdate = Boolean(current && latest && compareVersions(latest, current) > 0)
+    set({ latest: hasUpdate ? latest : '' })
   },
 }))
 

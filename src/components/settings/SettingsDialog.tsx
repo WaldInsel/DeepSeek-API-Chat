@@ -37,6 +37,7 @@ import {
   type HistoryImportProgress,
 } from './historyImportState.js'
 import { closeSettings, useSettingsDialog, type SettingsSection } from './settingsDialogState.js'
+import { UpdateCheck } from './UpdateCheck.js'
 import styles from './Settings.module.css'
 
 /**
@@ -106,7 +107,7 @@ const SettingsContent = ({ state }: { state: 'open' | 'closed' }) => {
               <LocaleSetting />
               <ThinkingCollapseSetting />
               <TtsVoiceSetting />
-
+              <UpdateCheck />
             </>
           ) : (
             <>
