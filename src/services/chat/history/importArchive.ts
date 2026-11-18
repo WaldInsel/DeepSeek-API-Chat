@@ -72,13 +72,21 @@ export const checkArchiveFormat = async (file: File): Promise<void> => {
   fail('backupUnrecognized')
 }
 
+/** 解压写入占导入进度的绝大部分，MIME 回填通常很快。 */
+const EXTRACT_SHARE = 0.98
+
 /**
  * 流式导入：manifest → user（不导入）→ 全部会话 JSON → index → 全部图片。
  * 也支持会话与图片交错排列、index 位于末尾的条目顺序。
  * 会话读完立即暂存，只保留图片路径映射；图片全部读完后逐会话回填 MIME，不改变图片身份。
  * 写入导入暂存存储；调用方负责先清空暂存，成功后替换正式数据，失败时清理暂存。
+ * onProgress 上报本阶段 0–1 的比例。
  */
-export const importArchive = async (file: File): Promise<void> => {
+export const importArchive = async (
+  file: File,
+  onProgress?: (ratio: number) => void
+): Promise<void> => {
+  const report = (ratio: number) => onProgress?.(Math.min(1, Math.max(0, ratio)))
   if (!(await isZipFile(file))) {
     fail('backupUnrecognized')
   }
@@ -102,7 +110,7 @@ export const importArchive = async (file: File): Promise<void> => {
   }
 
   try {
-    for await (const entry of readArchive(file)) {
+    for await (const entry of readArchive(file, (ratio) => report(ratio * EXTRACT_SHARE))) {
       const { path } = entry
       const sessionId = parseSessionPath(path)
       if (!manifest) {
@@ -155,5 +163,8 @@ export const importArchive = async (file: File): Promise<void> => {
   ) {
     fail('backupIncomplete')
   }
-  await db.updateStagingFileTypes(stored)
+  await db.updateStagingFileTypes(stored, (ratio) =>
+    report(EXTRACT_SHARE + ratio * (1 - EXTRACT_SHARE))
+  )
+  report(1)
 }

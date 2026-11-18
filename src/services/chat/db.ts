@@ -175,10 +175,15 @@ export const saveStagingFiles = (files: StoredFile[]): Promise<void> =>
   putFiles('filesStaging', files)
 
 /** 图片位于会话 JSON 之后；全部读完后回填具体 MIME，保留归档给出的 isImage 标识。 */
-export const updateStagingFileTypes = async (types: ReadonlyMap<string, string>): Promise<void> => {
+export const updateStagingFileTypes = async (
+  types: ReadonlyMap<string, string>,
+  onProgress?: (ratio: number) => void
+): Promise<void> => {
   const tx = (await getDB()).transaction('sessionsStaging', 'readwrite')
   await Promise.all([
     (async () => {
+      const total = await tx.store.count()
+      let done = 0
       for (let cursor = await tx.store.openCursor(); cursor; cursor = await cursor.continue()) {
         const session = cursor.value
         let changed = false
@@ -197,6 +202,10 @@ export const updateStagingFileTypes = async (types: ReadonlyMap<string, string>)
         if (changed) {
           await cursor.update(session)
         }
+        done += 1
+        if (total > 0) {
+          onProgress?.(done / total)
+        }
       }
     })(),
     tx.done,
@@ -207,12 +216,26 @@ export const updateStagingFileTypes = async (types: ReadonlyMap<string, string>)
  * 导入完成后用暂存替换正式数据：同一事务中替换会话、摘要和原件，并清空暂存。
  * 逐条游标复制，同一时间只读取一条记录；事务失败时整体回滚，正式数据不变。
  */
-export const commitStaging = async (): Promise<SessionSummary[]> => {
+export const commitStaging = async (
+  onProgress?: (ratio: number) => void
+): Promise<SessionSummary[]> => {
   const summaries: SessionSummary[] = []
   const tx = (await getDB()).transaction(
     ['sessions', 'sessionSummaries', 'files', 'sessionsStaging', 'filesStaging'],
     'readwrite'
   )
+  const [sessionCount, fileCount] = await Promise.all([
+    tx.objectStore('sessionsStaging').count(),
+    tx.objectStore('filesStaging').count(),
+  ])
+  const total = sessionCount + fileCount
+  let moved = 0
+  const advance = () => {
+    moved += 1
+    if (total > 0) {
+      onProgress?.(moved / total)
+    }
+  }
   const move = async (from: 'sessionsStaging' | 'filesStaging', to: 'sessions' | 'files') => {
     try {
       const target = tx.objectStore(to)
@@ -226,6 +249,7 @@ export const commitStaging = async (): Promise<SessionSummary[]> => {
         cursor = await cursor.continue()
       ) {
         await target.put(cursor.value)
+        advance()
         if (to === 'sessions') {
           const summary = storedSummary(cursor.value as Session)
           await tx.objectStore('sessionSummaries').put(summary)

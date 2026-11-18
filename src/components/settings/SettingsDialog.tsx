@@ -29,6 +29,10 @@ import { Select } from '../base/Select.js'
 import { showToast } from '../base/toastState.js'
 import { usePresence } from '../base/usePresence.js'
 import { ApiKeyConfirm, ApiKeyField, useApiKeyEditor } from './ApiKeyField.js'
+import {
+  setHistoryImportProgress,
+  useHistoryImportProgress,
+} from './historyImportState.js'
 import { closeSettings, useSettingsDialog, type SettingsSection } from './settingsDialogState.js'
 import styles from './Settings.module.css'
 
@@ -324,7 +328,7 @@ const SettingCell = ({
   className,
 }: {
   label: string
-  description?: string
+  description?: ReactNode
   status: Status
   action: ReactNode
   className?: string
@@ -362,18 +366,47 @@ const useHistoryImport = () => {
     setFile(null)
     setBusy(true)
     setStatus(null)
+    setHistoryImportProgress(0)
     try {
-      const count = await importHistory(file)
+      const count = await importHistory(file, (ratio) => {
+        // 进度条只显示整数百分比，避免每个解压分块都触发渲染。
+        const percent = Math.round(ratio * 100)
+        if (useHistoryImportProgress.getState().progress !== percent) {
+          setHistoryImportProgress(percent)
+        }
+      })
       setStatus({ key: count === 1 ? 'historyImportedOne' : 'historyImported', params: { count } })
     } catch {
       setStatus({ key: 'historyImportFailed', error: true })
     } finally {
       importing.current = false
       setBusy(false)
+      setHistoryImportProgress(null)
     }
   }
 
   return { file, busy, status, select: setFile, cancel: () => setFile(null), confirm }
+}
+
+/** 导入进度：细进度条 + 百分比，显示在设置项描述位，弹窗关闭后重新打开也能恢复。 */
+const ImportProgress = ({ value }: { value: number }) => {
+  const t = useTranslate()
+  const label = t('historyImportProgress', { progress: value })
+  return (
+    <div
+      className={styles.importProgress}
+      role="progressbar"
+      aria-label={label}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={value}
+    >
+      <span className={styles.importProgressTrack}>
+        <span className={styles.importProgressFill} style={{ width: `${value}%` }} />
+      </span>
+      <span className={styles.importProgressText}>{label}</span>
+    </div>
+  )
 }
 
 /** 导入 = 覆盖：用选中文件替换本地全部会话与附件。 */
@@ -386,11 +419,14 @@ const ImportHistory = ({
 }) => {
   const t = useTranslate()
   const inputRef = useRef<HTMLInputElement>(null)
+  const progress = useHistoryImportProgress((state) => state.progress)
 
   return (
     <SettingCell
       label={t('historyImport')}
-      description={t('historyImportDescription')}
+      description={
+        progress === null ? t('historyImportDescription') : <ImportProgress value={progress} />
+      }
       status={historyImport.status}
       action={
         <>

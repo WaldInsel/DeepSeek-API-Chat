@@ -237,9 +237,20 @@ export type ArchiveEntry = {
 /**
  * 按条目在文件中的物理顺序逐条、逐块解压，跳过目录条目。
  * 调用方必须消费完当前条目的数据，再请求下一个条目。
+ * onProgress 按已消费的压缩字节上报 0–1 的比例，结尾补到 1。
  */
-export async function* readArchive(file: File): AsyncGenerator<ArchiveEntry> {
+export async function* readArchive(
+  file: File,
+  onProgress?: (ratio: number) => void
+): AsyncGenerator<ArchiveEntry> {
   const directory = await readDirectory(file)
+  // 中央目录起点即全部条目数据区的长度，作为解压进度的分母。
+  const totalBytes = directory.offset
+  const report = (consumed: number) => {
+    if (onProgress && totalBytes > 0) {
+      onProgress(Math.min(1, consumed / totalBytes))
+    }
+  }
   for (const [index, entry] of directory.entries.entries()) {
     const boundary = directory.entries[index + 1]?.offset ?? directory.offset
     const start = await readEntryOffset(file, entry, boundary)
@@ -270,6 +281,7 @@ export async function* readArchive(file: File): AsyncGenerator<ArchiveEntry> {
           start + offset,
           Math.min(READ_CHUNK_BYTES, entry.compressedSize - offset)
         )
+        report(entry.offset + offset + chunk.length)
         if (!inflate) {
           append(chunk)
           yield* pending.splice(0)
@@ -296,6 +308,7 @@ export async function* readArchive(file: File): AsyncGenerator<ArchiveEntry> {
       invalid()
     }
   }
+  report(totalBytes)
 }
 
 /** 读出整个条目：会话 JSON 需要完整解析，图片需要识别类型后整张保存。 */

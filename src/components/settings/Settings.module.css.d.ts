@@ -13,6 +13,10 @@ declare const styles: {
 
   readonly "description": string;
   readonly "error": string;
+  readonly "importProgress": string;
+  readonly "importProgressTrack": string;
+  readonly "importProgressFill": string;
+  readonly "importProgressText": string;
   readonly "apiKey": string;
   readonly "apiKeySaved": string;
   readonly "apiKeyInput": string;

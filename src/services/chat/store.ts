@@ -385,11 +385,18 @@ const waitForIdle = (sessionId?: string) =>
     })
   })
 
+/** 写入暂存阶段占整体进度的比例，剩余部分留给提交替换。 */
+const HISTORY_WRITE_SHARE = 0.9
+
 /**
  * 替换历史对话：先写入暂存，成功后原子替换旧记录；写入为空即删除全部会话与附件。
  * 期间停止生成并禁止修改会话；失败时清除暂存，保留原有记录。
+ * write 通过回调上报写入阶段进度，onProgress 接收合并后的整体进度。
  */
-export const replaceHistory = async (write: () => Promise<void>): Promise<number> => {
+export const replaceHistory = async (
+  write: (onProgress: (ratio: number) => void) => Promise<void>,
+  onProgress?: (ratio: number) => void
+): Promise<number> => {
   if (get().importingHistory) {
     throw new Error('History replacement is already in progress')
   }
@@ -407,8 +414,16 @@ export const replaceHistory = async (write: () => Promise<void>): Promise<number
     await db.clearStaging()
     let summaries: SessionSummary[]
     try {
-      await write()
-      summaries = await db.commitStaging()
+      await write((ratio) =>
+        onProgress?.(Math.min(HISTORY_WRITE_SHARE, Math.max(0, ratio) * HISTORY_WRITE_SHARE))
+      )
+      onProgress?.(HISTORY_WRITE_SHARE)
+      summaries = await db.commitStaging((ratio) =>
+        onProgress?.(
+          HISTORY_WRITE_SHARE + Math.min(1, Math.max(0, ratio)) * (1 - HISTORY_WRITE_SHARE)
+        )
+      )
+      onProgress?.(1)
     } catch (error) {
       await db.clearStaging().catch(db.reportStorageError('clear unfinished history replacement'))
       throw error
