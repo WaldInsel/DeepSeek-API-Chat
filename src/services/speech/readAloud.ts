@@ -23,13 +23,33 @@ export const useReadAloud = create<ReadAloudState>(() => ({ messageId: null, sta
 /** 首帧前多缓冲一点，减少网络抖动造成的断续 */
 const START_DELAY = 0.1
 
-let current: { controller: AbortController; context: AudioContext } | null = null
+let current: { controller: AbortController; context: AudioContext; shared: boolean } | null = null
+
+/**
+ * 自动朗读发生在回复完成时，不是用户手势，浏览器可能不让新的 AudioContext 出声。
+ * 在用户手势内调用 primeReadAloud 创建并解锁一个共享上下文，后续朗读复用它。
+ */
+let sharedContext: AudioContext | null = null
+
+const createContext = () => new AudioContext({ sampleRate: TTS_SAMPLE_RATE })
+
+export const primeReadAloud = () => {
+  if (!sharedContext || sharedContext.state === 'closed') {
+    sharedContext = createContext()
+  }
+  if (sharedContext.state === 'suspended') {
+    void sharedContext.resume().catch(() => {})
+  }
+}
 
 const finish = (controller: AbortController) => {
-  if (current?.controller !== controller) {
+  if (!current || current.controller !== controller) {
     return
   }
-  void current.context.close()
+  // 共享上下文留给下一次朗读，避免自动朗读重新落到未解锁状态
+  if (!current.shared) {
+    void current.context.close()
+  }
   current = null
   useReadAloud.setState({ messageId: null, status: 'idle' })
 }
@@ -88,13 +108,22 @@ export const toggleReadAloud = (
     return
   }
   const controller = new AbortController()
-  const context = new AudioContext({ sampleRate: TTS_SAMPLE_RATE })
-  current = { controller, context }
+  const context = sharedContext && sharedContext.state !== 'closed' ? sharedContext : createContext()
+  current = { controller, context, shared: context === sharedContext }
   useReadAloud.setState({ messageId, status: 'loading' })
   // 音色在开始朗读时读取，设置中切换后下一次朗读生效
   const { apiKey, ttsVoice } = useSettings.getState()
 
   void (async () => {
+    // 手动朗读在点击事件内 resume 会成功；自动朗读若浏览器尚未解锁则失败，给出提示
+    if (context.state === 'suspended') {
+      await context.resume().catch(() => {})
+    }
+    if (context.state !== 'running') {
+      finish(controller)
+      onError(new Error('AudioContext is not running'))
+      return
+    }
     let nextTime = 0
     let lastSource: AudioBufferSourceNode | null = null
     let rest = new Uint8Array(0)

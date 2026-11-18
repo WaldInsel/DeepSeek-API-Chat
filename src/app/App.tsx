@@ -24,7 +24,7 @@ import { Toast } from '../components/base/Toast.js'
 import { showToast } from '../components/base/toastState.js'
 import { onUploadNotice } from '../services/attachments.js'
 import { Button } from '../components/base/Button.js'
-import { stopReadAloud } from '../services/speech/readAloud.js'
+import { primeReadAloud, stopReadAloud } from '../services/speech/readAloud.js'
 import { CollapsedSider } from '../components/sider/CollapsedSider.js'
 import { closeMobileSider } from '../components/sider/mobileSiderState.js'
 import { MobileSider, Sider } from '../components/sider/Sider.js'
@@ -36,6 +36,7 @@ export const App = () => {
   const t = useTranslate()
   const isMobile = useIsMobile()
   const locale = useSettings((state) => state.locale)
+  const ttsAutoPlay = useSettings((state) => state.ttsAutoPlay)
   // 移动端侧边栏以独立抽屉管理开合状态
   const siderCollapsed = useSettings((state) => state.siderCollapsed) && !isMobile
   const ready = useChatStore((state) => state.ready)
@@ -85,6 +86,14 @@ export const App = () => {
   useEffect(closeSearchPanel, [activeId])
   // 切换会话时停止朗读
   useEffect(stopReadAloud, [activeId])
+  // 已开启自动朗读时，用页面上的第一次触摸补做音频解锁（例如重启应用后）
+  useEffect(() => {
+    if (!isMobile || !ttsAutoPlay) {
+      return
+    }
+    document.addEventListener('pointerdown', primeReadAloud, { once: true })
+    return () => document.removeEventListener('pointerdown', primeReadAloud)
+  }, [isMobile, ttsAutoPlay])
   // 移动端选中会话、切换布局后收起抽屉
   useEffect(closeMobileSider, [activeId, isMobile])
 

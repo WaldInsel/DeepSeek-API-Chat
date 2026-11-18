@@ -221,6 +221,8 @@ export const zh = {
   ttsStop: '停止朗读',
   ttsUnavailable: '这条回答暂时无法朗读',
   ttsFailed: '朗读失败，请稍后再试',
+  ttsAutoPlayOn: '自动朗读已开启',
+  ttsAutoPlayOff: '自动朗读已关闭',
   retry: '重试',
   latestReminderLanguage: '中文',
   settingsLocaleZhCN: '简体中文',

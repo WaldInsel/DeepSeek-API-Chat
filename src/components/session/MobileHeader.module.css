@@ -7,6 +7,10 @@
   padding: calc(12px + var(--safe-top)) 10px 4px;
 }
 
+.spacer {
+  flex: 1;
+}
+
 .title {
   flex: 1;
   min-width: 0;

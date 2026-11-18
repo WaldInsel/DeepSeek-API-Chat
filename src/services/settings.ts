@@ -11,13 +11,14 @@ export type ThemePreference = 'light' | 'dark' | 'system'
 /** 思考内容的呈现方式：完全折叠 / 部分折叠（限高滚动）/ 不折叠 */
 export type ThinkingCollapse = 'full' | 'partial' | 'none'
 
-/** 本机设置，存 localStorage：API Key、语言、主题、位置、朗读音色、深度思考与强度、智能搜索开关、思考折叠、侧边栏收起状态 */
+/** 本机设置，存 localStorage：API Key、语言、主题、位置、朗读音色、自动朗读、深度思考与强度、智能搜索开关、思考折叠、侧边栏收起状态 */
 type Settings = {
   apiKey: string | null
   locale: Locale
   themePreference: ThemePreference
   location: UserLocation | null
   ttsVoice: TtsVoice
+  ttsAutoPlay: boolean
   thinking: boolean
   thinkingEffort: ThinkingEffort
   thinkingCollapse: ThinkingCollapse
@@ -31,6 +32,7 @@ const KEYS = {
   location: 'deepseek-api-chat:location',
   themePreference: 'deepseek-api-chat:theme-preference',
   ttsVoice: 'deepseek-api-chat:tts-voice',
+  ttsAutoPlay: 'deepseek-api-chat:tts-auto-play',
   thinking: 'deepseek-api-chat:thinking',
   thinkingEffort: 'deepseek-api-chat:thinking-effort',
   thinkingCollapse: 'deepseek-api-chat:thinking-collapse',
@@ -118,6 +120,7 @@ export const useSettings = create<Settings>(() => ({
   location: initialLocation(),
   themePreference: initialThemePreference(),
   ttsVoice: initialTtsVoice(),
+  ttsAutoPlay: read(KEYS.ttsAutoPlay) === 'true',
   thinking: initialEffort !== 'none',
   thinkingEffort: initialEffort,
   thinkingCollapse: initialThinkingCollapse(),
@@ -144,6 +147,11 @@ export const setThemePreference = (themePreference: ThemePreference) => {
 export const setTtsVoice = (ttsVoice: TtsVoice) => {
   write(KEYS.ttsVoice, ttsVoice)
   useSettings.setState({ ttsVoice })
+}
+
+export const setTtsAutoPlay = (ttsAutoPlay: boolean) => {
+  write(KEYS.ttsAutoPlay, String(ttsAutoPlay))
+  useSettings.setState({ ttsAutoPlay })
 }
 
 export const setApiKey = (apiKey: string | null) => {

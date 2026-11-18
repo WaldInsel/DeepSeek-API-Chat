@@ -233,6 +233,8 @@ export const en = {
   ttsStop: 'Stop reading',
   ttsUnavailable: 'This answer cannot be read aloud right now',
   ttsFailed: 'Failed to read aloud. Please try again later.',
+  ttsAutoPlayOn: 'Auto-read enabled',
+  ttsAutoPlayOff: 'Auto-read disabled',
   retry: 'Retry',
   latestReminderLanguage: 'English',
   settingsLocaleZhCN: 'Simplified Chinese',

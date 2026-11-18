@@ -1,11 +1,17 @@
 import { useTranslate } from '../../i18n/index.js'
 import clsx from 'clsx'
-import { memo } from 'react'
+import { memo, useEffect, useRef } from 'react'
+import { useIsMobile } from '../../app/viewport.js'
 import { IconRefreshOutline16, IconWarningOutline16 } from '../base/icons.js'
 import { describeReply } from '../../services/chat/describe.js'
 import { canContinueReply } from '../../services/chat/reply.js'
 import { continueReply, regenerateReply } from '../../services/chat/store.js'
-import { stopReadAloud } from '../../services/speech/readAloud.js'
+import { useSettings } from '../../services/settings.js'
+import {
+  describeReadAloudError,
+  stopReadAloud,
+  toggleReadAloud,
+} from '../../services/speech/readAloud.js'
 import type { AssistantMessage as AssistantMessageType } from '../../services/chat/types.js'
 import { openSettings } from '../settings/settingsDialogState.js'
 import { IconButton } from '../base/IconButton.js'
@@ -13,6 +19,7 @@ import { Button } from '../base/Button.js'
 import { Markdown } from '../markdown/Markdown.js'
 import { SiteThumbnails } from '../search/SiteLogo.js'
 import { toggleSearchPanel, useSearchPanel } from '../search/searchPanelState.js'
+import { showToast } from '../base/toastState.js'
 import { ReadAloudButton } from './ReadAloudButton.js'
 import { CopyButton } from './CopyButton.js'
 import { ReplyArea } from './ReplyArea.js'
@@ -46,6 +53,8 @@ export const AssistantMessage = memo(function AssistantMessage({
   const t = useTranslate()
   const view = useReplyView(message, streaming)
   const panelEntry = useSearchPanel((state) => state.entry)
+  const isMobile = useIsMobile()
+  const ttsAutoPlay = useSettings((state) => state.ttsAutoPlay)
   const notice = streaming ? null : describeReply(message)
   // 安全拒绝：已下发的思考与正文按协议丢弃，只显示模板答复。
   const refused = message.stopReason === 'refusal'
@@ -56,6 +65,22 @@ export const AssistantMessage = memo(function AssistantMessage({
   const copyText = responseText || notice?.text
   const waiting = streaming && view.steps.length === 0 && !view.answer && !message.thinking
   const summaryEntry = `${message.id}-summary`
+  // 移动端自动朗读：只在流式结束的那一刻触发一次，打开历史会话不会读旧消息
+  const wasStreaming = useRef(streaming)
+  const finishedText = useRef(responseText)
+  finishedText.current = responseText
+  useEffect(() => {
+    const finished = wasStreaming.current && !streaming
+    wasStreaming.current = streaming
+    if (!finished || !isMobile || !ttsAutoPlay || refused) {
+      return
+    }
+    const text = finishedText.current
+    if (!text) {
+      return
+    }
+    toggleReadAloud(message.id, text, (error) => showToast(describeReadAloudError(error)))
+  }, [isMobile, message.id, refused, streaming, ttsAutoPlay])
   return (
     <div className={styles.message}>
       {refused ? null : (
