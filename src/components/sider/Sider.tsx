@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslate } from '../../i18n/index.js'
 import { IconPanelLeftOutline16, IconSettingsOutline16, NewChatIcon } from '../base/icons.js'
 import { setSiderCollapsed } from '../../services/settings.js'
@@ -168,17 +168,35 @@ export const MobileSider = () => {
   const open = useMobileSider((state) => state.open)
   // 关闭时保留 DOM 播完滑出动画
   const { mounted, visible } = usePresence(open)
+  const drawerRef = useRef<HTMLDivElement>(null)
+  const maskRef = useRef<HTMLDivElement>(null)
+
+  // 拖动时只改 CSS 变量和过渡类，不触发 React 重渲染，长列表才不会掉帧
+  useEffect(() => {
+    const apply = (state: { progress: number; dragging: boolean }) => {
+      const progress = String(state.progress)
+      drawerRef.current?.style.setProperty('--drawer-progress', progress)
+      maskRef.current?.style.setProperty('--drawer-progress', progress)
+      drawerRef.current?.classList.toggle(styles.drawerDragging, state.dragging)
+    }
+    apply(useMobileSider.getState())
+    return useMobileSider.subscribe(apply)
+  }, [])
+
   if (!mounted) {
     return null
   }
   return (
     <>
       <div
+        ref={maskRef}
         className={clsx(styles.drawerMask, visible && styles.drawerOpen)}
         onClick={closeMobileSider}
       />
       <div
+        ref={drawerRef}
         className={clsx(styles.drawer, visible && styles.drawerOpen)}
+        data-mobile-sider
         aria-hidden={!visible || undefined}
       >
         <Sider mobile />

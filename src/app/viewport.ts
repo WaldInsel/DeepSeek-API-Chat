@@ -64,12 +64,10 @@ export const useMobileViewport = (enabled: boolean) => {
   return frameRef
 }
 
-const preventPageScroll = (event: TouchEvent) => {
-  if (event.touches.length !== 1) {
-    return
-  }
+/** 从触摸目标向上找是否存在可滚动的容器；只在 touchstart 时判断一次 */
+const isScrollableTarget = (target: EventTarget | null) => {
   for (
-    let element = event.target instanceof Element ? event.target : null;
+    let element = target instanceof Element ? target : null;
     element && element !== document.body;
     element = element.parentElement
   ) {
@@ -79,10 +77,10 @@ const preventPageScroll = (event: TouchEvent) => {
     const scrollsX =
       /auto|scroll/.test(style.overflowX) && element.scrollWidth > element.clientWidth
     if (scrollsY || scrollsX) {
-      return
+      return true
     }
   }
-  event.preventDefault()
+  return false
 }
 
 /** 阻止移动端整页滚动，保留内部可滚动区域的滚动和双指缩放。 */
@@ -91,7 +89,21 @@ export const usePreventPageScroll = (enabled: boolean) => {
     if (!enabled) {
       return
     }
-    document.addEventListener('touchmove', preventPageScroll, { passive: false })
-    return () => document.removeEventListener('touchmove', preventPageScroll)
+    // 每次 touchmove 都遍历祖先并读计算样式会拖慢长列表滚动，这里缓存起手时的判断结果
+    let scrollable = false
+    const start = (event: TouchEvent) => {
+      scrollable = isScrollableTarget(event.target)
+    }
+    const move = (event: TouchEvent) => {
+      if (event.touches.length === 1 && !scrollable) {
+        event.preventDefault()
+      }
+    }
+    document.addEventListener('touchstart', start, { passive: true })
+    document.addEventListener('touchmove', move, { passive: false })
+    return () => {
+      document.removeEventListener('touchstart', start)
+      document.removeEventListener('touchmove', move)
+    }
   }, [enabled])
 }
