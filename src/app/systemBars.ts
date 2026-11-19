@@ -1,3 +1,5 @@
+import { isTauri } from './platform.js'
+
 /** MainActivity 注入的原生桥接，只有 Android 上有 */
 type SystemBarsBridge = {
   /** 返回 {"top":<CSS px>,"bottom":<CSS px>} */
@@ -66,7 +68,17 @@ export const syncSystemBarIcons = (dark: boolean) => {
   window.SystemBars?.setDarkIcons(dark)
 }
 
-/** 外部链接优先交给安卓原生系统浏览器；桌面/网页端用真实 <a> 点击，避免 window.open 被 WebView 拦截 */
+const openWithAnchor = (url: string) => {
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.target = '_blank'
+  anchor.rel = 'noreferrer'
+  document.body.appendChild(anchor)
+  anchor.click()
+  anchor.remove()
+}
+
+/** 外部链接优先交给安卓原生系统浏览器；桌面 Tauri 交给系统默认浏览器；网页端用真实 <a> 点击 */
 export const openExternal = (url: string) => {
   if (window.SystemBars?.openExternal) {
     try {
@@ -77,13 +89,39 @@ export const openExternal = (url: string) => {
       // 桥接不可用时继续走原生链接
     }
   }
-  const anchor = document.createElement('a')
-  anchor.href = url
-  anchor.target = '_blank'
-  anchor.rel = 'noreferrer'
-  document.body.appendChild(anchor)
-  anchor.click()
-  anchor.remove()
+  if (isTauri()) {
+    // Tauri WebView 会拦截 target=_blank，必须经 opener 插件交给系统浏览器
+    void import('@tauri-apps/plugin-opener')
+      .then(({ openUrl }) => openUrl(url))
+      .catch(() => openWithAnchor(url))
+    return
+  }
+  openWithAnchor(url)
+}
+
+/**
+ * Tauri WebView 不会处理 target=_blank。在 document 冒泡阶段统一接管 http(s) 链接：
+ * 组件里已经 preventDefault 并自行调用 openExternal 的会被跳过，其余交给系统浏览器。
+ */
+export const setupExternalLinks = () => {
+  if (!isTauri()) {
+    return
+  }
+  document.addEventListener('click', (event) => {
+    if (event.defaultPrevented || event.button !== 0) {
+      return
+    }
+    const target = event.target
+    if (!(target instanceof Element)) {
+      return
+    }
+    const anchor = target.closest('a[href]')
+    if (!(anchor instanceof HTMLAnchorElement) || !/^https?:\/\//i.test(anchor.href)) {
+      return
+    }
+    event.preventDefault()
+    openExternal(anchor.href)
+  })
 }
 
 /** 接管全面屏留白；网页端没有桥接，保持 CSS 里的 env() 兜底 */
