@@ -42,6 +42,7 @@ export const MobileHeader = ({ title, extra }: { title?: string; extra?: ReactNo
           <IconButton
             size="xl"
             tone="primary"
+            className={styles.audioButton}
             icon={ttsAutoPlay ? <IconAudioOutline20 /> : <IconAudioOffOutline20 />}
             aria-label={t(ttsAutoPlay ? 'ttsAutoPlayOn' : 'ttsAutoPlayOff')}
             onClick={toggleTtsAutoPlay}

@@ -11,6 +11,14 @@
   flex: 1;
 }
 
+/* 首页音频开关：图形比同排图标更满，稍微收一点 */
+.audioButton {
+  & svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
 .title {
   flex: 1;
   min-width: 0;
