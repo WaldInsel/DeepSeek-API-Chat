@@ -2,7 +2,7 @@
 
 [简体中文](README.md) | English
 
-A chat app powered by the DeepSeek API. The web, desktop, and Android builds share one frontend; no application backend is required, and the browser or WebView connects directly to the configured API service.
+A chat app powered by the DeepSeek API, modified and improved from [Chat Demo](https://github.com/deepseek-ai/chat-demo/). The web, desktop, and Android builds share one frontend; no application backend is required, and the browser or WebView connects directly to the configured API service.
 
 ## Getting the app
 

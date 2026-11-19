@@ -2,7 +2,7 @@
 
 简体中文 | [English](README.en.md)
 
-基于 DeepSeek API 的聊天应用，网页、桌面与 Android 共用一套前端代码。无需自建后端，浏览器或 WebView 直接请求配置的 API 服务。
+基于 DeepSeek API 的聊天应用，由 [Chat Demo](https://github.com/deepseek-ai/chat-demo/) 进行修改优化而来，网页、桌面与 Android 共用一套前端代码。无需自建后端，浏览器或 WebView 直接请求配置的 API 服务。
 
 ## 获取与使用
 
