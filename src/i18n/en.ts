@@ -27,6 +27,7 @@ export const en = {
   settings: 'Settings',
   updateAvailable: 'New version',
   updateAvailableHint: 'Version {version} is available — open releases',
+  usageBalanceHint: 'View usage and balance',
   appName: 'DeepSeek Chat',
   deleteSessionModalContentTitle: 'Delete chat?',
   deleteSessionWithFilesDescription:

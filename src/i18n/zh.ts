@@ -24,6 +24,7 @@ export const zh = {
   settings: '设置',
   updateAvailable: '新版本',
   updateAvailableHint: '发现新版本 {version}，点击查看',
+  usageBalanceHint: '查看用量与余额',
   appName: 'DeepSeek Chat',
   deleteSessionModalContentTitle: '永久删除对话',
   deleteSessionWithFilesDescription: '删除后，该对话及其中上传的文件将不可恢复。确认删除吗？',

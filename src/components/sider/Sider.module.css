@@ -222,6 +222,11 @@
   }
 }
 
+/* 无新版本时同一个徽标显示余额，数字等宽避免刷新时抖动 */
+.balanceBadge {
+  font-variant-numeric: tabular-nums;
+}
+
 .collapsed {
   position: absolute;
   top: 0;
