@@ -6,7 +6,18 @@
     "core:default",
     "dialog:default",
     "fs:default",
-    "fs:allow-write-file",
-    "opener:default"
+    {
+      "identifier": "fs:allow-mkdir",
+      "allow": [{ "path": "$TEMP/**" }]
+    },
+    {
+      "identifier": "fs:allow-write-file",
+      "allow": [{ "path": "$TEMP/**" }]
+    },
+    "opener:default",
+    {
+      "identifier": "opener:allow-open-path",
+      "allow": [{ "path": "$TEMP/**" }]
+    }
   ]
 }

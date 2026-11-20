@@ -15,6 +15,7 @@ export const en = {
   chatModeProHint: 'Good at complex questions, no document parsing or image recognition',
   contentCaveat: 'AI-generated, for reference only',
   imagePreview: 'View image',
+  fileOpenFailed: 'Unable to open this file with the default app',
   expandSiderbarButton: 'Open sidebar',
   collapseSiderbarButton: 'Close sidebar',
   newChat: 'New chat',
@@ -152,8 +153,7 @@ export const en = {
   apiKeyGuideStep4Title: 'Create the key',
   apiKeyGuideStep4Description:
     'Generate a personal API key on the API keys page for calling models.',
-  apiKeyGuideNote:
-    'The API key is stored only on this device and is never uploaded anywhere else.',
+  apiKeyGuideNote: 'The API key is stored only on this device and is never uploaded anywhere else.',
   apiKeyVerifying: 'Verifying...',
   confirm: 'Confirm',
   apiKeyInvalid: 'Invalid API Key. Please check it and try again.',

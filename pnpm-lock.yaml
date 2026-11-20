@@ -172,6 +172,9 @@ importers:
       '@capacitor/share':
         specifier: ^7.0.4
         version: 7.0.4(@capacitor/core@7.6.10)
+      '@tauri-apps/api':
+        specifier: 2.12.4
+        version: 2.12.4
       '@tauri-apps/plugin-dialog':
         specifier: ^2.8.4
         version: 2.8.4

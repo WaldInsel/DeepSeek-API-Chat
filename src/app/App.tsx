@@ -27,6 +27,7 @@ import { SettingsDialog } from '../components/settings/SettingsDialog.js'
 import { ApiKeyGuide } from '../components/settings/ApiKeyGuide.js'
 import { Toast } from '../components/base/Toast.js'
 import { ImageViewer } from '../components/base/ImageViewer.js'
+import { FileViewer } from '../components/files/FileViewer.js'
 import { showToast } from '../components/base/toastState.js'
 import { onUploadNotice } from '../services/attachments.js'
 import { Button } from '../components/base/Button.js'
@@ -173,6 +174,7 @@ export const App = () => {
       <SettingsDialog />
       <ApiKeyGuide />
       <ImageViewer />
+      <FileViewer />
       <Toast />
     </>
   )

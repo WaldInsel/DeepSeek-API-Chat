@@ -1,3 +1,5 @@
+import { translate } from '../i18n/index.js'
+import { showToast } from '../components/base/toastState.js'
 import { isTauri } from './platform.js'
 
 /** MainActivity 注入的原生桥接，只有 Android 上有 */
@@ -7,6 +9,8 @@ type SystemBarsBridge = {
   setDarkIcons: (dark: boolean) => void
   /** 交给系统浏览器打开链接（WebView 里 window.open 不可靠） */
   openExternal?: (url: string) => void
+  /** 把缓存里的附件交给系统默认应用打开，失败时回调 window.__fileOpenFailed */
+  openFile?: (uri: string, mimeType: string) => void
 }
 
 type Insets = { top: number; bottom: number }
@@ -16,6 +20,7 @@ declare global {
     SystemBars?: SystemBarsBridge
     __applySystemInsets?: (top: number, bottom: number) => void
     __applyFontWeight?: (adjustment: number) => void
+    __fileOpenFailed?: () => void
   }
 }
 
@@ -129,6 +134,8 @@ export const setupSystemBars = () => {
   // 即使桥接没注入，也允许原生主动推送（页面加载完成前后各推一次）
   window.__applySystemInsets = applySystemInsets
   window.__applyFontWeight = applyFontWeight
+  // 安卓原生打开附件失败时回调，文案跟随当前语言
+  window.__fileOpenFailed = () => showToast(translate('fileOpenFailed'))
   const systemBars = window.SystemBars
   if (!systemBars) {
     return

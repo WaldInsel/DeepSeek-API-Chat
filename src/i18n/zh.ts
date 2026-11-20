@@ -13,6 +13,7 @@ export const zh = {
   chatModeProHint: '擅长复杂问题，不支持解析文档和识别图片',
   contentCaveat: '内容由 AI 生成，请仔细甄别',
   imagePreview: '查看图片',
+  fileOpenFailed: '无法用系统默认应用打开该文件',
   expandSiderbarButton: '打开边栏',
   collapseSiderbarButton: '收起边栏',
   newChat: '开启新对话',

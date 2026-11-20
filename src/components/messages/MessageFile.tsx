@@ -1,14 +1,15 @@
 import clsx from 'clsx'
 import { useEffect, useState } from 'react'
-import { isWebApp } from '../../app/platform.js'
 import { useTranslate } from '../../i18n/index.js'
 import { useUploads } from '../../services/attachments.js'
 import { loadFile } from '../../services/chat/db.js'
 import type { FileAttachment } from '../../services/chat/types.js'
+
 import { IconPhotoErrorFill20, IconRefreshOutline16 } from '../base/icons.js'
 import { openImageViewer } from '../base/imageViewerState.js'
 import { Tooltip } from '../base/Tooltip.js'
 import { FileCard } from '../files/FileCard.js'
+import { openAttachment } from '../files/openAttachment.js'
 import styles from './MessageFile.module.css'
 
 /** 原件从 IndexedDB 读出并生成本地地址；undefined 表示加载中，null 表示原件缺失。 */
@@ -59,8 +60,7 @@ export const MessageFile = ({
 }) => {
   const t = useTranslate()
   const url = useFileUrl(file.id)
-  // 原生 WebView 打开 blob: 链接会白屏甚至卡死，只有网页版提供「点击查看原件」
-  const canOpen = isWebApp()
+
   const [failedUrl, setFailedUrl] = useState<string | null>(null)
   const upload = useUploadState(file)
   const uploading = upload?.status === 'uploading'
@@ -165,7 +165,11 @@ export const MessageFile = ({
       error={errorText}
       onRetry={retry ?? undefined}
       onOpen={
-        url && canOpen && !upload ? () => window.open(url, '_blank', 'noreferrer') : undefined
+        url
+          ? () => {
+              void openAttachment({ id: file.id, name: file.name, objectUrl: url })
+            }
+          : undefined
       }
     />
   )

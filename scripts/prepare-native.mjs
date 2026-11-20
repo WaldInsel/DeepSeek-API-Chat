@@ -49,12 +49,14 @@ import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
+import androidx.core.content.FileProvider;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsAnimationCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
+import java.io.File;
 import java.util.List;
 
 /**
@@ -253,6 +255,18 @@ public class MainActivity extends BridgeActivity {
     webView.post(() -> webView.evaluateJavascript(script, null));
   }
 
+  /** 系统里没有能打开该文件的应用时通知页面，用页面语言提示 */
+  private void notifyFileOpenFailed() {
+    WebView webView = getBridge() == null ? null : getBridge().getWebView();
+    if (webView == null) {
+      return;
+    }
+    webView.post(
+        () ->
+            webView.evaluateJavascript(
+                "window.__fileOpenFailed&&window.__fileOpenFailed()", null));
+  }
+
   private void applyIconTheme(boolean dark) {
     WindowInsetsControllerCompat controller =
         WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
@@ -289,6 +303,31 @@ public class MainActivity extends BridgeActivity {
               startActivity(intent);
             } catch (Exception ignored) {
               // 没有能处理该链接的应用时保持安静
+            }
+          });
+    }
+
+    /** 把缓存里的附件交给系统默认应用打开（Word、WPS、PDF 阅读器等） */
+    @JavascriptInterface
+    public void openFile(String uri, String mimeType) {
+      runOnUiThread(
+          () -> {
+            try {
+              Uri parsed = Uri.parse(uri);
+              Uri target = parsed;
+              if ("file".equals(parsed.getScheme())) {
+                File file = new File(parsed.getPath());
+                target =
+                    FileProvider.getUriForFile(
+                        MainActivity.this, getPackageName() + ".fileprovider", file);
+              }
+              Intent intent = new Intent(Intent.ACTION_VIEW);
+              intent.setDataAndType(target, mimeType);
+              intent.addFlags(
+                  Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+              startActivity(intent);
+            } catch (Exception error) {
+              notifyFileOpenFailed();
             }
           });
     }
