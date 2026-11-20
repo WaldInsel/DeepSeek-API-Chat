@@ -82,7 +82,7 @@ export const AssistantMessage = memo(function AssistantMessage({
     toggleReadAloud(message.id, text, (error) => showToast(describeReadAloudError(error)))
   }, [isMobile, message.id, refused, streaming, ttsAutoPlay])
   return (
-    <div className={styles.message}>
+    <div className={styles.message} data-message-id={message.id}>
       {refused ? null : (
         <ReplyArea
           message={message}

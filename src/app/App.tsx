@@ -18,6 +18,7 @@ import {
   useChatStore,
 } from '../services/chat/store.js'
 import { SearchPanel } from '../components/search/SearchPanel.js'
+import { HistorySearch } from '../components/search/HistorySearch.js'
 import { closeSearchPanel, useSearchPanel } from '../components/search/searchPanelState.js'
 import { SessionView } from '../components/session/SessionView.js'
 import { MobileHeader } from '../components/session/MobileHeader.js'
@@ -170,6 +171,7 @@ export const App = () => {
           </div>
         </main>
         <SearchPanel />
+        <HistorySearch />
       </div>
       <SettingsDialog />
       <ApiKeyGuide />

@@ -1,5 +1,5 @@
 .sider {
-  --sider-width: 261px;
+  --sider-width: 288px;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -50,6 +50,13 @@
   white-space: nowrap;
   text-overflow: ellipsis;
   color: var(--dsw-alias-brand-primary);
+}
+
+.topActions {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 2px;
 }
 
 .newChat {

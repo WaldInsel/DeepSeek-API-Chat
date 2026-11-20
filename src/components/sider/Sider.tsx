@@ -1,7 +1,12 @@
 import clsx from 'clsx'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslate } from '../../i18n/index.js'
-import { IconPanelLeftOutline16, IconSettingsOutline16, NewChatIcon } from '../base/icons.js'
+import {
+  IconPanelLeftOutline16,
+  IconSearchOutline16,
+  IconSettingsOutline16,
+  NewChatIcon,
+} from '../base/icons.js'
 import { setSiderCollapsed } from '../../services/settings.js'
 import { groupSessions, PINNED_GROUP_KEY } from '../../services/chat/sessionGroups.js'
 import { usePinnedSessions } from '../../services/chat/pinned.js'
@@ -13,6 +18,7 @@ import { Modal } from '../base/Modal.js'
 import { showToast } from '../base/toastState.js'
 import { usePresence } from '../base/usePresence.js'
 import { openSettings } from '../settings/settingsDialogState.js'
+import { openHistorySearch } from '../search/historySearchState.js'
 import { closeMobileSider, useMobileSider } from './mobileSiderState.js'
 import { SessionItem } from './SessionItem.js'
 import { UpdateBadge } from './UpdateBadge.js'
@@ -70,13 +76,22 @@ export const Sider = ({
     >
       <div className={styles.top}>
         <div className={styles.appName}>{t('appName')}</div>
-        <IconButton
-          size="m"
-          icon={<IconPanelLeftOutline16 />}
-          tooltip={t('collapseSiderbarButton')}
-          tooltipPlacement="bottom"
-          onClick={() => (mobile ? closeMobileSider() : setSiderCollapsed(true))}
-        />
+        <div className={styles.topActions}>
+          <IconButton
+            size="m"
+            icon={<IconSearchOutline16 />}
+            tooltip={t('searchConversations')}
+            tooltipPlacement="bottom"
+            onClick={openHistorySearch}
+          />
+          <IconButton
+            size="m"
+            icon={<IconPanelLeftOutline16 />}
+            tooltip={t('collapseSiderbarButton')}
+            tooltipPlacement="bottom"
+            onClick={() => (mobile ? closeMobileSider() : setSiderCollapsed(true))}
+          />
+        </div>
       </div>
       <button
         type="button"

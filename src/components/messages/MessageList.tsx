@@ -7,6 +7,7 @@ import {
 } from '../../services/chat/branches.js'
 import { selectMessageVersion } from '../../services/chat/store.js'
 import type { Session } from '../../services/chat/types.js'
+import { clearSearchFocus, useHistorySearch } from '../search/historySearchState.js'
 import { closeSearchPanel } from '../search/searchPanelState.js'
 import { AssistantMessage } from './AssistantMessage.js'
 import { ScrollToBottomContext } from './scrollContext.js'
@@ -60,6 +61,9 @@ export const MessageList = ({
     setPreviousVersions(versions)
   }
   const lastMessageId = messages.at(-1)?.id
+  const focusMessageId = useHistorySearch((state) =>
+    state.focus?.sessionId === session.id ? state.focus.messageId : null
+  )
   const scrollToBottom = useCallback(() => {
     const el = scrollRef.current
     // 移动端编辑消息时页面不随键盘缩小，贴底会把编辑框藏到键盘后面，交给编辑框自己校正
@@ -100,6 +104,26 @@ export const MessageList = ({
     stickyRef.current = true
     scrollToBottom()
   }, [session.id, lastMessageId, scrollToBottom])
+
+  // 搜索结果命中后滚到对应消息并居中；找不到（例如分支已切换）就只打开会话
+  useLayoutEffect(() => {
+    if (!focusMessageId) {
+      return
+    }
+    const scroll = scrollRef.current
+    const target = scroll?.querySelector<HTMLElement>(
+      `[data-message-id="${CSS.escape(focusMessageId)}"]`
+    )
+    if (!scroll || !target) {
+      clearSearchFocus()
+      return
+    }
+    stickyRef.current = false
+    const top = target.getBoundingClientRect().top - scroll.getBoundingClientRect().top
+    scroll.scrollTop += top - (scroll.clientHeight - target.clientHeight) / 2
+    scrollTopRef.current = scroll.scrollTop
+    clearSearchFocus()
+  }, [focusMessageId, session.id, lastMessageId])
 
   useEffect(closeSearchPanel, [session.id, lastMessageId])
 
