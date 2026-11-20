@@ -1,5 +1,7 @@
 .switcher {
   --mode-gap: 5px;
+  --indicator-flash-left: -3.7px;
+  --indicator-pro-left: 48.6%;
 
   position: relative;
   display: inline-flex;
@@ -13,12 +15,14 @@
   gap: var(--mode-gap);
   border-radius: 999px;
   background-color: var(--dsw-specific-selector);
+  touch-action: pan-y;
+  user-select: none;
 }
 
 .indicator {
   position: absolute;
   top: -2px;
-  left: -3.7px;
+  left: var(--indicator-flash-left);
   box-sizing: border-box;
   width: 53%;
   height: calc(100% + 4px);
@@ -26,11 +30,15 @@
   border-radius: 999px;
   background-color: var(--dsw-alias-button-ghost-active-fill);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-  transition: left 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transform: translateX(var(--mode-drag-x, 0px));
+  will-change: transform;
+  transition:
+    left 0.24s cubic-bezier(0.2, 0.8, 0.2, 1),
+    transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .indicator[data-mode='pro'] {
-  left: 48.6%;
+  left: var(--indicator-pro-left);
 }
 
 .option {
@@ -94,19 +102,13 @@
 
 .switcher.compact {
   --mode-gap: 2px;
+  --indicator-flash-left: -2.6px;
+  --indicator-pro-left: 48.25%;
 
   width: 204px;
   height: 32px;
   margin: 0;
   padding: 2px;
-}
-
-.switcher.compact .indicator {
-  left: -2.6px;
-}
-
-.switcher.compact .indicator[data-mode='pro'] {
-  left: 48.25%;
 }
 
 .switcher.compact .option {
