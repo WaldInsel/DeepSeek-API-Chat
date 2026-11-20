@@ -50,6 +50,8 @@ export const zh = {
   send: '发送',
   editMessage: '编辑消息',
   regenerate: '重新生成',
+  branchConversation: '创建分支',
+  branchTitleSuffix: '-分支',
   continueGenerating: '继续生成',
   changeApiKey: '更换 API Key',
   topUp: '前往充值',

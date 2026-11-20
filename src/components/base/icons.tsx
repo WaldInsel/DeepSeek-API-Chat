@@ -295,6 +295,21 @@ export const IconRefreshOutline16 = () => (
   </svg>
 )
 
+export const IconBranchOutline16 = () => (
+  <svg width={16} height={16} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M4 3.4v9.2" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" />
+    <path
+      d="M4 8.4c0-2.1 1.7-3.8 3.8-3.8h1.9"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+    />
+    <circle cx={4} cy={2.6} r={1.6} fill="currentColor" />
+    <circle cx={4} cy={13.4} r={1.6} fill="currentColor" />
+    <circle cx={11.2} cy={4.6} r={1.6} fill="currentColor" />
+  </svg>
+)
+
 export const IconSendOutline16 = () => (
   <svg width={16} height={16} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path

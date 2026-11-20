@@ -2,10 +2,14 @@ import { useTranslate } from '../../i18n/index.js'
 import clsx from 'clsx'
 import { memo, useEffect, useRef } from 'react'
 import { useIsMobile } from '../../app/viewport.js'
-import { IconRefreshOutline16, IconWarningOutline16 } from '../base/icons.js'
+import {
+  IconBranchOutline16,
+  IconRefreshOutline16,
+  IconWarningOutline16,
+} from '../base/icons.js'
 import { describeReply } from '../../services/chat/describe.js'
 import { canContinueReply } from '../../services/chat/reply.js'
-import { continueReply, regenerateReply } from '../../services/chat/store.js'
+import { branchSession, continueReply, regenerateReply } from '../../services/chat/store.js'
 import { useSettings } from '../../services/settings.js'
 import {
   describeReadAloudError,
@@ -179,6 +183,16 @@ export const AssistantMessage = memo(function AssistantMessage({
               onClick={() => {
                 stopReadAloud()
                 regenerateReply(sessionId, message.id)
+              }}
+            />
+            <IconButton
+              icon={<IconBranchOutline16 />}
+              tooltip={t('branchConversation')}
+              tooltipPlacement="bottom"
+              disabled={busy}
+              onClick={() => {
+                stopReadAloud()
+                branchSession(sessionId, message.id)
               }}
             />
           </div>

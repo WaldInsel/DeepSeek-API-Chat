@@ -7,7 +7,14 @@ import { currentChatModel } from '../chatMode.js'
 import { extractFileIds, getFileErrorCode, isRetryableApiError } from '../api/errors.js'
 import { cancelUpload, describeUploadError, uploadAttachment, useUploads } from '../attachments.js'
 import { useSettings } from '../settings.js'
-import { appendBranch, getVisibleMessages, normalizeSession, selectVersion } from './branches.js'
+import { translate } from '../../i18n/index.js'
+import {
+  appendBranch,
+  getVisibleMessages,
+  normalizeSession,
+  selectVersion,
+  sliceVisiblePath,
+} from './branches.js'
 import * as db from './db.js'
 import {
   clearAllDrafts,
@@ -490,6 +497,56 @@ export const selectSession = (id: string) => {
     void ensureSessionLoaded(id)
     trimSessionCache()
   }
+}
+
+/**
+ * 从当前会话的某条消息处复制出新会话：只保留可见路径到该消息为止，
+ * 消息重新编号后独立演进；标题沿用源标题并追加分支后缀。
+ */
+export const branchSession = (sessionId: string, messageId: string): boolean => {
+  if (get().importingHistory || deletingSessions.has(sessionId)) {
+    return false
+  }
+  const source = getSession(sessionId)
+  if (!source) {
+    return false
+  }
+  const path = sliceVisiblePath(source, messageId)
+  if (!path || path.length === 0) {
+    return false
+  }
+  const ids = path.map(() => createId())
+  const messages: Message[] = path.map((message, index) => ({
+    ...message,
+    id: ids[index],
+    parentId: index === 0 ? null : ids[index - 1],
+    selectedChildId: index < ids.length - 1 ? ids[index + 1] : undefined,
+  }))
+  const now = Date.now()
+  const session: Session = {
+    id: createId(),
+    title: `${source.title.trim() || translate('untitledChat')}${translate('branchTitleSuffix')}`,
+    createdAt: now,
+    updatedAt: now,
+    messages,
+    rootMessageId: messages[0].id,
+  }
+  // 源会话刚发送、原件还没落盘时同步接管，避免副本引用不到附件。
+  const files = pendingFiles.get(sessionId)
+  if (files) {
+    pendingFiles.set(session.id, [...files])
+  }
+  touchSession(session.id)
+  set((state) => ({
+    sessions: sortSessions([toSessionSummary(session), ...state.sessions]),
+    sessionCache: { ...state.sessionCache, [session.id]: session },
+    activeId: session.id,
+  }))
+  persist(session.id)
+  void import('./search.js')
+    .then(({ registerSession }) => registerSession(session))
+    .catch(() => undefined)
+  return true
 }
 
 export const renameSession = (id: string, title: string) => {

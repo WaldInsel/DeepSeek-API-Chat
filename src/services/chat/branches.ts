@@ -34,6 +34,13 @@ export const getVisibleMessages = (session: Session): Message[] => {
   return path
 }
 
+/** 当前可见路径中到指定消息（含）为止的部分；不在当前路径上的消息返回 null。 */
+export const sliceVisiblePath = (session: Session, messageId: string): Message[] | null => {
+  const path = getVisibleMessages(session)
+  const end = path.findIndex((message) => message.id === messageId)
+  return end < 0 ? null : path.slice(0, end + 1)
+}
+
 export type MessageVersions = { ids: string[]; index: number }
 
 /** 一次遍历收集兄弟版本；版本列表未变化时复用旧对象与索引，避免流式正文更新重绘历史消息。 */

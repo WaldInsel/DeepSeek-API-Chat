@@ -45,6 +45,13 @@ const buildEntry = (session: Session): IndexedSession => ({
   }),
 })
 
+/** 新建或刚复制出来的会话直接写入索引；索引尚未初始化时等首次全量构建即可。 */
+export const registerSession = (session: Session) => {
+  if (initialized) {
+    index.set(session.id, buildEntry(session))
+  }
+}
+
 /** 只补读取摘要里新出现或更新时间变化的会话，删除的会话直接丢掉 */
 const refreshIndex = async () => {
   const state = useChatStore.getState()
