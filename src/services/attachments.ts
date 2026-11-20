@@ -215,8 +215,23 @@ const MIME_BY_EXT: Record<string, string> = {
   png: 'image/png',
   jpg: 'image/jpeg',
   jpeg: 'image/jpeg',
+  jpe: 'image/jpeg',
+  jfif: 'image/jpeg',
+  pjpeg: 'image/jpeg',
+  pjp: 'image/jpeg',
   gif: 'image/gif',
   webp: 'image/webp',
+  avif: 'image/avif',
+  apng: 'image/apng',
+  svg: 'image/svg+xml',
+  svgz: 'image/svg+xml',
+  bmp: 'image/bmp',
+  dib: 'image/bmp',
+  ico: 'image/x-icon',
+  cur: 'image/x-icon',
+  xbm: 'image/x-xbitmap',
+  tif: 'image/tiff',
+  tiff: 'image/tiff',
 }
 
 /** 取文件的 MIME：优先用浏览器给出的类型，缺失时按扩展名推断 */

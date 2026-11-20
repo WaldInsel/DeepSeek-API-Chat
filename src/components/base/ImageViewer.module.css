@@ -1,0 +1,61 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding:
+    calc(56px + env(safe-area-inset-top)) calc(20px + env(safe-area-inset-right))
+    calc(20px + env(safe-area-inset-bottom)) calc(20px + env(safe-area-inset-left));
+  background-color: rgba(0, 0, 0, 0.9);
+  touch-action: none;
+  transition: opacity var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.overlay[data-state='open'] {
+  animation: image-viewer-fade var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.overlay[data-state='closed'] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+@keyframes image-viewer-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+.image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 4px;
+  transform-origin: 0 0;
+  will-change: transform;
+  cursor: zoom-in;
+  user-select: none;
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+}
+
+.overlay .close {
+  position: absolute;
+  top: calc(12px + env(safe-area-inset-top));
+  left: calc(12px + env(safe-area-inset-left));
+  color: #fff;
+  background-color: rgba(255, 255, 255, 0.16);
+}
+
+.overlay .close:hover:not(:disabled),
+.overlay .close:active:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.28);
+}
+
+.overlay .close svg {
+  width: 18px;
+  height: 18px;
+}

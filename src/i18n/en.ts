@@ -14,6 +14,7 @@ export const en = {
   chatModeFlashHint: 'For everyday conversations, quick responses',
   chatModeProHint: 'Good at complex questions, no image input',
   contentCaveat: 'AI-generated, for reference only',
+  imagePreview: 'View image',
   expandSiderbarButton: 'Open sidebar',
   collapseSiderbarButton: 'Close sidebar',
   newChat: 'New chat',

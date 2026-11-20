@@ -12,6 +12,7 @@ export const zh = {
   chatModeFlashHint: '适合日常对话，及时响应',
   chatModeProHint: '擅长复杂问题，不支持识别图片',
   contentCaveat: '内容由 AI 生成，请仔细甄别',
+  imagePreview: '查看图片',
   expandSiderbarButton: '打开边栏',
   collapseSiderbarButton: '收起边栏',
   newChat: '开启新对话',

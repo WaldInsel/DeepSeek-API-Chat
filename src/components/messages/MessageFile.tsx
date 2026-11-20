@@ -6,6 +6,7 @@ import { useUploads } from '../../services/attachments.js'
 import { loadFile } from '../../services/chat/db.js'
 import type { FileAttachment } from '../../services/chat/types.js'
 import { IconPhotoErrorFill20, IconRefreshOutline16 } from '../base/icons.js'
+import { openImageViewer } from '../base/imageViewerState.js'
 import { Tooltip } from '../base/Tooltip.js'
 import { FileCard } from '../files/FileCard.js'
 import styles from './MessageFile.module.css'
@@ -142,21 +143,17 @@ export const MessageFile = ({
       return <div className={styles.image} />
     }
 
-    // 网页版：点开原件看大图；原生 WebView 打不开 blob: 链接，只作为静态缩略图
-    return canOpen ? (
-      <a
+    // 所有平台统一走应用内全屏预览：原生 WebView 打不开 blob: 链接，不能靠新窗口
+    return (
+      <button
+        type="button"
         className={clsx(styles.image, styles.imageThumb)}
-        href={url}
-        target="_blank"
-        rel="noreferrer"
         title={file.name}
+        aria-label={t('imagePreview')}
+        onClick={() => openImageViewer(url, file.name)}
       >
         {preview}
-      </a>
-    ) : (
-      <div className={clsx(styles.image, styles.imageThumb)} title={file.name}>
-        {preview}
-      </div>
+      </button>
     )
   }
 
