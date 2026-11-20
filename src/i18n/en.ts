@@ -30,6 +30,8 @@ export const en = {
   updateAvailable: 'New version',
   updateAvailableHint: 'Version {version} is available — open releases',
   usageBalanceHint: 'View usage and balance',
+  peakPeriod: 'Peak',
+  valleyPeriod: 'Off-peak',
   appName: 'DeepSeek Chat',
   deleteSessionModalContentTitle: 'Delete chat?',
   deleteSessionWithFilesDescription:

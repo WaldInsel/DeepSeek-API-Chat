@@ -234,7 +234,34 @@
 
 /* 无新版本时同一个徽标显示余额，数字等宽避免刷新时抖动 */
 .balanceBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-variant-numeric: tabular-nums;
+}
+
+/* 当前电价时段：峰红谷蓝 */
+.balancePeriod {
+  font-weight: var(--fw-semibold);
+}
+
+.balancePeak {
+  color: var(--dsw-alias-state-error-primary);
+}
+
+.balanceValley {
+  color: var(--dsw-alias-brand-primary);
+}
+
+/* 余额不足 1 元时金额变红 */
+.balanceLow {
+  color: var(--dsw-alias-state-error-primary);
+}
+
+/* hover 时跟随按钮文字反白，避免红蓝字压在品牌色背景上 */
+.balanceBadge:hover .balancePeriod,
+.balanceBadge:hover .balanceLow {
+  color: var(--dsw-alias-label-inverted, #fff);
 }
 
 .collapsed {

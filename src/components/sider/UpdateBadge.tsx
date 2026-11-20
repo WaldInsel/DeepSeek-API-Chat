@@ -1,13 +1,15 @@
 import clsx from 'clsx'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslate } from '../../i18n/index.js'
 import { openUsage, useBalance } from '../../services/balance.js'
 import { useSettings } from '../../services/settings.js'
 import { openReleases, useUpdateStore } from '../../services/update.js'
+import { isPeakTime } from '../../utils/peakValley.js'
 import styles from './Sider.module.css'
 
 /**
  * 设置按钮右侧的小徽标：有新版本时提示更新，没有新版本时显示人民币余额。
+ * 余额前标出当前电价时段（峰/谷），余额不足 1 元时金额变红。
  */
 export const UpdateBadge = () => {
   const t = useTranslate()
@@ -15,6 +17,7 @@ export const UpdateBadge = () => {
   const apiKey = useSettings((state) => state.apiKey)
   const amount = useBalance((state) => state.amount)
   const refresh = useBalance((state) => state.refresh)
+  const [now, setNow] = useState(() => new Date())
 
   useEffect(() => {
     void refresh()
@@ -34,6 +37,22 @@ export const UpdateBadge = () => {
     return () => document.removeEventListener('visibilitychange', onVisibilityChange)
   }, [apiKey, refresh])
 
+  // 跨过 12:00、14:00、18:00 或零点时，峰谷标识需要自动切换
+  useEffect(() => {
+    const tick = () => setNow(new Date())
+    const timer = window.setInterval(tick, 30_000)
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        tick()
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    return () => {
+      window.clearInterval(timer)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+    }
+  }, [])
+
   if (latest) {
     return (
       <button
@@ -47,6 +66,9 @@ export const UpdateBadge = () => {
     )
   }
 
+  const peak = isPeakTime(now)
+  const lowBalance = amount !== null && Number(amount) < 1
+
   return (
     <button
       type="button"
@@ -54,7 +76,10 @@ export const UpdateBadge = () => {
       title={t('usageBalanceHint')}
       onClick={openUsage}
     >
-      {`¥ ${amount ?? '—'}`}
+      <span className={clsx(styles.balancePeriod, peak ? styles.balancePeak : styles.balanceValley)}>
+        {t(peak ? 'peakPeriod' : 'valleyPeriod')}
+      </span>
+      <span className={clsx(lowBalance && styles.balanceLow)}>{`¥ ${amount ?? '—'}`}</span>
     </button>
   )
 }
