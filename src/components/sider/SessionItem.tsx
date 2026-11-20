@@ -112,7 +112,7 @@ export const SessionItem = memo(function SessionItem({
             {
               key: 'pin',
               label: t(pinned ? 'sessionItemMenuUnpinOption' : 'sessionItemMenuPinOption'),
-              icon: <IconPinOutline16 />,
+              icon: <IconPinOutline16 off={pinned} />,
               onSelect: () => togglePinnedSession(session.id),
             },
             {
