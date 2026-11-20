@@ -18,7 +18,7 @@ import {
   IconThinkOutline14,
 } from '../base/icons.js'
 import { setSearch, setThinking, setThinkingEffort, useSettings } from '../../services/settings.js'
-import { useIsMobile } from '../../app/viewport.js'
+import { stopMessageEdits, useIsMobile } from '../../app/viewport.js'
 import { sendMessage, stopReply, useChatStore } from '../../services/chat/store.js'
 import {
   addDraftFiles,
@@ -259,6 +259,8 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
   return (
     <div
       className={clsx(styles.wrapper, sessionId === null ? styles.home : styles.session)}
+      // 编辑消息时点底部输入框就结束编辑，否则页面保持整屏会把输入框留在键盘后面
+      onPointerDownCapture={stopMessageEdits}
       onClick={(event) => {
         if (event.target === event.currentTarget) {
           textareaRef.current?.focus({ preventScroll: true })

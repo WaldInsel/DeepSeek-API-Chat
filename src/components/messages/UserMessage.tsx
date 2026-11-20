@@ -1,7 +1,12 @@
 import { useTranslate } from '../../i18n/index.js'
 import clsx from 'clsx'
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { beginMessageEdit, endMessageEdit, useIsMobile } from '../../app/viewport.js'
+import {
+  beginMessageEdit,
+  endMessageEdit,
+  useIsMobile,
+  useMessageEditing,
+} from '../../app/viewport.js'
 import { IconEditOutline16 } from '../base/icons.js'
 import { editMessage, retryUpload } from '../../services/chat/store.js'
 import { stopReadAloud } from '../../services/speech/readAloud.js'
@@ -54,6 +59,18 @@ export const UserMessage = memo(function UserMessage({
     }
     beginMessageEdit(message.id)
     return () => endMessageEdit(message.id)
+  }, [editing, message.id])
+
+  // 外部（底部输入框）接管焦点时退出编辑，避免页面锁住高度把输入框留在键盘后面
+  useEffect(() => {
+    if (!editing) {
+      return
+    }
+    return useMessageEditing.subscribe((state) => {
+      if (!state.ids.has(message.id)) {
+        setEditing(false)
+      }
+    })
   }, [editing, message.id])
 
   const revealEditor = useCallback(() => {

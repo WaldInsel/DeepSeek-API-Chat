@@ -38,6 +38,14 @@ export const endMessageEdit = (id: string) => {
   useMessageEditing.setState({ ids: next })
 }
 
+/** 底部输入框接管焦点时退出所有内联编辑，让键盘正常把输入框抬上来 */
+export const stopMessageEdits = () => {
+  if (useMessageEditing.getState().ids.size === 0) {
+    return
+  }
+  useMessageEditing.setState({ ids: new Set<string>() })
+}
+
 /**
  * 手机端页面跟随视觉视口，键盘弹出后顶栏和输入框仍留在可见区域。
  * 安卓 App 里 MainActivity 会把 WebView 容器直接 resize 到键盘顶部

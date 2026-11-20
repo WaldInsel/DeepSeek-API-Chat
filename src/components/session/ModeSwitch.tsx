@@ -1,5 +1,6 @@
 import clsx from 'clsx'
 import {
+  useLayoutEffect,
   useRef,
   useState,
   type MouseEvent as ReactMouseEvent,
@@ -20,8 +21,8 @@ const MODE_OPTIONS: { value: ChatMode; label: TranslationKey; icon: ReactNode }[
 const DRAG_THRESHOLD = 3
 /** 甩动速度阈值（px/ms）：手速快时直接切到对应模式 */
 const FLING_VELOCITY = 0.35
-/** 拖动时滑块允许超出轨道两端的余量，只留一点点缓冲 */
-const OVERSHOOT = 3
+/** 拖出轨道两端后还能继续跟手的极限余量（px），位移按海绵阻力递减 */
+const RUBBER_LIMIT = 24
 
 type DragState = {
   pointerId: number
@@ -29,7 +30,7 @@ type DragState = {
   startY: number
   origin: ChatMode
   active: boolean
-  /** 两档滑块的绝对 left（px），用来把拖动锁在轨道范围内 */
+  /** 两档滑块的绝对 left（px），也是海绵阻力的边界 */
   flashLeft: number
   proLeft: number
   originLeft: number
@@ -39,7 +40,21 @@ type DragState = {
   samples: { x: number; t: number }[]
 }
 
-const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
+/**
+ * 海绵阻力：拖出轨道两端后位移按越界距离递减，越拖越沉但不会硬顶死，松手再落回档位。
+ * 极限位移收敛到 RUBBER_LIMIT，手指继续走也不会突然卡住。
+ */
+const rubberBand = (value: number, min: number, max: number) => {
+  if (value < min) {
+    const over = min - value
+    return min - (over * RUBBER_LIMIT) / (over + RUBBER_LIMIT)
+  }
+  if (value > max) {
+    const over = value - max
+    return max + (over * RUBBER_LIMIT) / (over + RUBBER_LIMIT)
+  }
+  return value
+}
 
 const parseLength = (value: string, base: number) => {
   const text = value.trim()
@@ -79,6 +94,8 @@ export const ModeSwitch = ({
   const indicatorRef = useRef<HTMLSpanElement>(null)
   const dragRef = useRef<DragState | null>(null)
   const suppressClickRef = useRef(false)
+  /** 松手后需要从当前视觉位置单段滑到目标档的补偿量 */
+  const pendingLeftRef = useRef<{ dragLeft: number; targetLeft: number } | null>(null)
 
   const commit = (target: ChatMode) => {
     if (onChange) {
@@ -88,15 +105,37 @@ export const ModeSwitch = ({
     }
   }
 
-  const settle = (indicator: HTMLElement, onSettled?: () => void) => {
-    // 先恢复 CSS 过渡，下一帧再清掉拖动偏移和落定模式，否则同帧切换没有吸附动画
+  const settle = (indicator: HTMLElement) => {
+    // 先恢复 CSS 过渡，下一帧再清掉拖动偏移，否则同帧切换没有吸附动画
     indicator.style.transition = ''
     void indicator.offsetWidth
     requestAnimationFrame(() => {
       indicator.style.removeProperty('--mode-drag-x')
-      onSettled?.()
     })
   }
+
+  // 换档时 data-mode 会立刻把 left 挪到目标；先把这段位移补进 transform 再从手指位置滑过去，
+  // 避免「先弹回原来那一档、再滑到另一档」的两段动画
+  useLayoutEffect(() => {
+    const pending = pendingLeftRef.current
+    if (!pending) {
+      return
+    }
+    pendingLeftRef.current = null
+    const indicator = indicatorRef.current
+    if (!indicator) {
+      return
+    }
+    indicator.style.transition = 'none'
+    indicator.style.setProperty('--mode-drag-x', `${pending.dragLeft - pending.targetLeft}px`)
+    void indicator.offsetWidth
+    requestAnimationFrame(() => {
+      indicator.style.transition = ''
+      requestAnimationFrame(() => {
+        indicator.style.removeProperty('--mode-drag-x')
+      })
+    })
+  }, [mode])
 
   const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.pointerType === 'mouse' && event.button !== 0) {
@@ -109,9 +148,17 @@ export const ModeSwitch = ({
     }
     const switcherRect = switcher.getBoundingClientRect()
     const computed = getComputedStyle(switcher)
-    const flashLeft = parseLength(computed.getPropertyValue('--indicator-flash-left'), switcherRect.width)
-    const proLeft = parseLength(computed.getPropertyValue('--indicator-pro-left'), switcherRect.width)
+    const flashLeft = parseLength(
+      computed.getPropertyValue('--indicator-flash-left'),
+      switcherRect.width
+    )
+    const proLeft = parseLength(
+      computed.getPropertyValue('--indicator-pro-left'),
+      switcherRect.width
+    )
     const now = performance.now()
+    // 上一次落位动画还没被消费时先丢掉，避免这次交互补到旧位移
+    pendingLeftRef.current = null
     dragRef.current = {
       pointerId: event.pointerId,
       startX: event.clientX,
@@ -155,7 +202,6 @@ export const ModeSwitch = ({
       const indicator = indicatorRef.current
       if (indicator) {
         indicator.style.transition = 'none'
-
       }
     }
     const now = performance.now()
@@ -163,11 +209,7 @@ export const ModeSwitch = ({
     while (drag.samples.length > 2 && now - drag.samples[0].t > 100) {
       drag.samples.shift()
     }
-    const left = clamp(
-      drag.originLeft + dx,
-      drag.flashLeft - OVERSHOOT,
-      drag.proLeft + OVERSHOOT,
-    )
+    const left = rubberBand(drag.originLeft + dx, drag.flashLeft, drag.proLeft)
     const offset = left - drag.originLeft
     drag.offset = offset
     indicatorRef.current?.style.setProperty('--mode-drag-x', `${offset}px`)
@@ -212,8 +254,16 @@ export const ModeSwitch = ({
     } else {
       target = drag.originLeft + drag.offset > drag.midLeft ? 'pro' : 'flash'
     }
-    // 偏移清掉后再换边，left 与 transform 两段位移同向叠加不跳变
-    settle(indicator, target !== drag.origin ? () => commit(target) : undefined)
+    // 松手未换档就原地回落；换档走 pendingLeftRef 的单段补偿动画
+    if (target === drag.origin) {
+      settle(indicator)
+      return
+    }
+    pendingLeftRef.current = {
+      dragLeft: drag.originLeft + drag.offset,
+      targetLeft: target === 'pro' ? drag.proLeft : drag.flashLeft,
+    }
+    commit(target)
   }
 
   const onPointerCancel = (event: ReactPointerEvent<HTMLDivElement>) => {
