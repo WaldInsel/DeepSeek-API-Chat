@@ -32,7 +32,10 @@ export const Sider = ({
   const activeId = useChatStore((state) => state.activeId)
   const [now, setNow] = useState(Date.now)
   const pinnedIds = usePinnedSessions((state) => state.ids)
-  const groups = useMemo(() => groupSessions(sessions, now, t, pinnedIds), [sessions, now, t, pinnedIds])
+  const groups = useMemo(
+    () => groupSessions(sessions, now, t, pinnedIds),
+    [sessions, now, t, pinnedIds]
+  )
   const [deleting, setDeleting] = useState<SessionSummary | null>(null)
   const [deletePending, setDeletePending] = useState(false)
 
@@ -89,7 +92,7 @@ export const Sider = ({
         {t('newChat')}
       </button>
       <div className={styles.listWrap}>
-        <div className={styles.list}>
+        <div className={styles.list} data-sider-scroll="">
           {groups.map((group, index) => {
             // 置顶分组下面还有内容时，在两者的间距中间加一条浅灰分割线
             const divider = group.key === PINNED_GROUP_KEY && index < groups.length - 1

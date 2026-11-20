@@ -2,7 +2,12 @@ import { useEffect } from 'react'
 import clsx from 'clsx'
 import { useTranslate } from '../i18n/index.js'
 import { useSettings } from '../services/settings.js'
-import { useIsMobile, useMobileViewport, usePreventPageScroll } from './viewport.js'
+import {
+  useIsMobile,
+  useKeyboardInset,
+  useMobileViewport,
+  usePreventPageScroll,
+} from './viewport.js'
 import { setupSystemBars } from './systemBars.js'
 import { setupUpdateCheck } from '../services/update.js'
 import {
@@ -54,6 +59,8 @@ export const App = () => {
   )
 
   const frameRef = useMobileViewport(isMobile)
+  // 侧栏底部设置项留在原位，键盘弹起只给列表留滚动空间
+  useKeyboardInset()
 
   const streaming = useChatStore((state) =>
     state.activeId === null ? false : Object.hasOwn(state.streaming, state.activeId)

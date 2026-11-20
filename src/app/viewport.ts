@@ -130,6 +130,95 @@ export const useMobileViewport = (enabled: boolean) => {
   return frameRef
 }
 
+/** 聚焦后会弹出软键盘的元素 */
+const isTextEntry = () => {
+  const active = document.activeElement
+  return (
+    active instanceof HTMLElement &&
+    (active.isContentEditable || active.matches('input, textarea, select'))
+  )
+}
+
+/**
+ * 键盘弹起前的整屏高度与当前键盘覆盖高度，供对话列表这类固定在屏幕左右两侧的栏目使用。
+ * 键盘弹起时侧栏保持整屏高度，底部设置项留在原位被键盘盖住，列表只按键盘高度留出底部滚动空间；
+ * 窗口自身缩放（宽度变化或焦点不在输入框）照常跟随，避免侧栏比窗口还高。
+ */
+export const useKeyboardInset = () => {
+  useEffect(() => {
+    const viewport = window.visualViewport
+    if (!viewport) {
+      return
+    }
+    const root = document.documentElement
+    // 只有以触摸为主输入的设备才可能弹软键盘；桌面窗口缩放不能当成键盘
+    const coarsePointer = window.matchMedia('(pointer: coarse)')
+    let animationFrame = 0
+    let blurTimer = 0
+    let restHeight = Math.round(viewport.height)
+    let restWidth = Math.round(window.innerWidth)
+    let keyboardOpen = false
+
+    const update = () => {
+      // 双指缩放时会话列表也跟着缩放，不要把缩放后的高度记成整屏高度
+      if (viewport.scale !== 1) {
+        return
+      }
+      const height = Math.round(viewport.height)
+      const width = Math.round(window.innerWidth)
+      if (width !== restWidth || height >= restHeight || !coarsePointer.matches) {
+        restWidth = width
+        restHeight = height
+        keyboardOpen = false
+      } else if (!keyboardOpen) {
+        // 明显变矮且焦点在输入框才当作键盘，手柄缩放窗口不出错
+        if (isTextEntry() && restHeight - height > 120) {
+          keyboardOpen = true
+        } else {
+          restHeight = height
+        }
+      }
+      root.style.setProperty('--app-rest-height', `${restHeight}px`)
+      root.style.setProperty('--app-keyboard-inset', `${Math.max(0, restHeight - height)}px`)
+    }
+    const schedule = () => {
+      cancelAnimationFrame(animationFrame)
+      animationFrame = requestAnimationFrame(update)
+    }
+    // 焦点离开后键盘若一直没收起，说明之前的变矮不是键盘，把记录的高度改回当前视口
+    const onFocusOut = () => {
+      window.clearTimeout(blurTimer)
+      blurTimer = window.setTimeout(() => {
+        if (!keyboardOpen || isTextEntry()) {
+          return
+        }
+        const height = Math.round(viewport.height)
+        if (height < restHeight) {
+          keyboardOpen = false
+          restHeight = height
+          update()
+        }
+      }, 500)
+    }
+
+    update()
+    viewport.addEventListener('resize', schedule)
+    window.addEventListener('resize', schedule)
+    window.addEventListener('focusin', schedule)
+    window.addEventListener('focusout', onFocusOut)
+    return () => {
+      window.clearTimeout(blurTimer)
+      cancelAnimationFrame(animationFrame)
+      viewport.removeEventListener('resize', schedule)
+      window.removeEventListener('resize', schedule)
+      window.removeEventListener('focusin', schedule)
+      window.removeEventListener('focusout', onFocusOut)
+      root.style.removeProperty('--app-rest-height')
+      root.style.removeProperty('--app-keyboard-inset')
+    }
+  }, [])
+}
+
 /** 从触摸目标向上找是否存在可滚动的容器；只在 touchstart 时判断一次 */
 const isScrollableTarget = (target: EventTarget | null) => {
   for (

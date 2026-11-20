@@ -5,7 +5,8 @@
   flex-shrink: 0;
   box-sizing: border-box;
   width: var(--sider-width);
-  height: 100%;
+  /* 键盘弹起时侧栏不跟着变矮，底部设置项留在原位被键盘盖住 */
+  height: var(--app-rest-height, 100%);
   padding: 6px 12px 0;
   border-right: 1px solid var(--dsw-alias-border-l1);
   background-color: var(--dsw-specific-sidebar-fill);
@@ -107,6 +108,8 @@
   height: 100%;
   margin: 0 -2px;
   padding: 0 2px;
+  /* 侧栏保持整屏高度后，补出键盘遮住的部分，列表内容才能滚到键盘上方 */
+  padding-bottom: var(--app-keyboard-inset, 0px);
   overflow-y: auto;
   scrollbar-color: var(--scroll-color) transparent;
 }
@@ -261,10 +264,10 @@
 .drawer {
   position: absolute;
   top: 0;
-  bottom: 0;
   left: 0;
   z-index: 800;
   box-sizing: border-box;
+  height: var(--app-rest-height, 100%);
   transform: translateX(calc((var(--drawer-progress, 0) - 1) * 100%));
   transition: transform var(--ds-transition-duration) var(--ds-ease-in-out);
   will-change: transform;
