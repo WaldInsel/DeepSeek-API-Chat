@@ -26,6 +26,8 @@
     overflow-y: auto;
     overscroll-behavior-y: contain;
     scrollbar-color: var(--scroll-color) transparent;
+    /* 编辑消息时页面不缩小，补出键盘占掉的高度，编辑框才能滚到键盘上方 */
+    padding-bottom: var(--app-keyboard-cover, 0px);
   }
 }
 

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { useIsMobile } from '../../app/viewport.js'
+import { useIsMobile, useMessageEditing } from '../../app/viewport.js'
 import {
   buildMessageVersions,
   getVisibleMessages,
@@ -62,11 +62,13 @@ export const MessageList = ({
   const lastMessageId = messages.at(-1)?.id
   const scrollToBottom = useCallback(() => {
     const el = scrollRef.current
-    if (el && stickyRef.current) {
+    // 移动端编辑消息时页面不随键盘缩小，贴底会把编辑框藏到键盘后面，交给编辑框自己校正
+    const revealing = isMobile && useMessageEditing.getState().ids.size > 0
+    if (el && stickyRef.current && !revealing) {
       el.scrollTop = el.scrollHeight
       scrollTopRef.current = el.scrollTop
     }
-  }, [])
+  }, [isMobile])
 
   // 内容、键盘和输入框高度变化时，继续遵循当前跟随状态。
   useLayoutEffect(() => {
@@ -144,7 +146,11 @@ export const MessageList = ({
   return (
     <ScrollToBottomContext.Provider value={scrollToBottom}>
       <div ref={isMobile ? undefined : scrollRef} className={styles.container}>
-        <div ref={isMobile ? scrollRef : undefined} className={styles.scroll}>
+        <div
+          ref={isMobile ? scrollRef : undefined}
+          className={styles.scroll}
+          data-message-scroll=""
+        >
           <div ref={contentRef} className={styles.column}>
             {messages.map((message, index) =>
               message.role === 'user' ? (

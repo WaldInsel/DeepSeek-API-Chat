@@ -1,4 +1,5 @@
 import { useEffect, useRef, useSyncExternalStore } from 'react'
+import { create } from 'zustand'
 
 /** 窄于 768px 按移动端布局 */
 const query = window.matchMedia('not all and (min-width: 768px)')
@@ -11,11 +12,41 @@ const subscribe = (onChange: () => void) => {
 export const useIsMobile = () => useSyncExternalStore(subscribe, () => query.matches)
 
 /**
+ * 正在编辑的消息 id。
+ * 编辑已有消息时键盘只服务于内联编辑框，底部输入框不该跟着被顶到键盘上方，
+ * useMobileViewport 读到后会锁住键盘弹起前的页面高度。
+ */
+type MessageEditingState = { ids: ReadonlySet<string> }
+
+export const useMessageEditing = create<MessageEditingState>(() => ({ ids: new Set<string>() }))
+
+export const beginMessageEdit = (id: string) => {
+  const { ids } = useMessageEditing.getState()
+  if (ids.has(id)) {
+    return
+  }
+  useMessageEditing.setState({ ids: new Set(ids).add(id) })
+}
+
+export const endMessageEdit = (id: string) => {
+  const { ids } = useMessageEditing.getState()
+  if (!ids.has(id)) {
+    return
+  }
+  const next = new Set(ids)
+  next.delete(id)
+  useMessageEditing.setState({ ids: next })
+}
+
+/**
  * 手机端页面跟随视觉视口，键盘弹出后顶栏和输入框仍留在可见区域。
  * 安卓 App 里 MainActivity 会把 WebView 容器直接 resize 到键盘顶部
  * （Capacitor Keyboard 插件同款做法），visualViewport 高度和 WebView 高度一致，
  * 这里设置的是同一个值，不会重复扣减；键盘收起后变量回到整屏高度，
  * 底部导航栏（小白条）区域也能完整覆盖。
+ *
+ * 编辑已有消息时不跟随键盘：页面锁在键盘弹起前的整屏高度，底部输入框留在原位被键盘盖住，
+ * 只把键盘占掉的高度写进 --app-keyboard-cover，交给编辑框滚动避让。
  */
 export const useMobileViewport = (enabled: boolean) => {
   const frameRef = useRef<HTMLDivElement>(null)
@@ -31,28 +62,63 @@ export const useMobileViewport = (enabled: boolean) => {
     }
 
     let animationFrame = 0
+    let editing = useMessageEditing.getState().ids.size > 0
+    // 键盘弹起只会让视口变矮，保留没弹键盘时的最大高度，编辑时用它锁住页面
+    let restingHeight = Math.round(viewport.height)
+    let restingWidth = Math.round(window.innerWidth)
+
     const reset = () => {
       frame.style.removeProperty('--app-viewport-height')
       frame.style.removeProperty('--app-viewport-top')
+      frame.style.removeProperty('--app-keyboard-cover')
     }
     const update = () => {
       if (viewport.scale !== 1) {
         reset()
         return
       }
+      const width = Math.round(window.innerWidth)
+      if (width !== restingWidth) {
+        // 横竖屏切换后旧的最大高度失效，按新视口重新记录
+        restingWidth = width
+        restingHeight = Math.round(viewport.height)
+      }
+      if (editing) {
+        frame.style.setProperty('--app-viewport-height', `${restingHeight}px`)
+        frame.style.setProperty(
+          '--app-keyboard-cover',
+          `${Math.max(0, restingHeight - Math.round(viewport.height))}px`
+        )
+        return
+      }
+      restingHeight = Math.max(restingHeight, Math.round(viewport.height))
       frame.style.setProperty('--app-viewport-height', `${Math.round(viewport.height)}px`)
       frame.style.setProperty('--app-viewport-top', `${Math.round(viewport.offsetTop)}px`)
+      frame.style.removeProperty('--app-keyboard-cover')
     }
     const schedule = () => {
       cancelAnimationFrame(animationFrame)
       animationFrame = requestAnimationFrame(update)
     }
 
+    const onEditingChange = () => {
+      const next = useMessageEditing.getState().ids.size > 0
+      if (next === editing) {
+        return
+      }
+      editing = next
+      // 立即锁定，避免键盘动画中途才开始停住
+      cancelAnimationFrame(animationFrame)
+      update()
+    }
+    const unsubscribe = useMessageEditing.subscribe(onEditingChange)
+
     update()
     viewport.addEventListener('resize', schedule)
     viewport.addEventListener('scroll', schedule)
     window.addEventListener('resize', schedule)
     return () => {
+      unsubscribe()
       cancelAnimationFrame(animationFrame)
       viewport.removeEventListener('resize', schedule)
       viewport.removeEventListener('scroll', schedule)

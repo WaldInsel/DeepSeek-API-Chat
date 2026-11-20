@@ -1,7 +1,7 @@
 import { useTranslate } from '../../i18n/index.js'
 import clsx from 'clsx'
-import { memo, useLayoutEffect, useRef, useState } from 'react'
-import { useIsMobile } from '../../app/viewport.js'
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { beginMessageEdit, endMessageEdit, useIsMobile } from '../../app/viewport.js'
 import { IconEditOutline16 } from '../base/icons.js'
 import { editMessage, retryUpload } from '../../services/chat/store.js'
 import { stopReadAloud } from '../../services/speech/readAloud.js'
@@ -41,17 +41,75 @@ export const UserMessage = memo(function UserMessage({
   const t = useTranslate()
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(message.content)
+  const editorRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const revealFrame = useRef(0)
   const isMobile = useIsMobile()
   const canSend = !busy && (draft.trim() !== '' || message.files.length > 0)
+
+  // 编辑期间页面不再因键盘缩小，底部输入框留在原位；编辑框自己滚到键盘上方
+  useEffect(() => {
+    if (!editing) {
+      return
+    }
+    beginMessageEdit(message.id)
+    return () => endMessageEdit(message.id)
+  }, [editing, message.id])
+
+  const revealEditor = useCallback(() => {
+    const editor = editorRef.current
+    const scroll = editor?.closest<HTMLElement>('[data-message-scroll]')
+    if (!editor || !scroll) {
+      return
+    }
+    const viewport = window.visualViewport
+    const visibleBottom = viewport
+      ? Math.round(viewport.offsetTop + viewport.height)
+      : window.innerHeight
+    const scrollTopEdge = scroll.getBoundingClientRect().top
+    const rect = editor.getBoundingClientRect()
+    const gap = 8
+    if (rect.bottom > visibleBottom - gap) {
+      scroll.scrollTop += rect.bottom - visibleBottom + gap
+    } else if (rect.top < scrollTopEdge + gap) {
+      scroll.scrollTop -= scrollTopEdge + gap - rect.top
+    }
+  }, [])
+
+  const scheduleReveal = useCallback(() => {
+    cancelAnimationFrame(revealFrame.current)
+    revealFrame.current = requestAnimationFrame(revealEditor)
+  }, [revealEditor])
+
+  useEffect(() => () => cancelAnimationFrame(revealFrame.current), [])
+
+  useEffect(() => {
+    if (!editing || !isMobile) {
+      return
+    }
+    const viewport = window.visualViewport
+    scheduleReveal()
+    viewport?.addEventListener('resize', scheduleReveal)
+    viewport?.addEventListener('scroll', scheduleReveal)
+    window.addEventListener('resize', scheduleReveal)
+    return () => {
+      viewport?.removeEventListener('resize', scheduleReveal)
+      viewport?.removeEventListener('scroll', scheduleReveal)
+      window.removeEventListener('resize', scheduleReveal)
+    }
+  }, [editing, isMobile, scheduleReveal])
 
   useLayoutEffect(() => {
     const textarea = textareaRef.current
     if (editing && textarea) {
       textarea.style.height = 'auto'
       textarea.style.height = `${Math.min(textarea.scrollHeight, 202)}px`
+      // 输入到换行时编辑框变高，再校正一次滚动位置；放在帧后避免被列表贴底覆盖
+      if (isMobile) {
+        scheduleReveal()
+      }
     }
-  }, [editing, draft])
+  }, [editing, draft, isMobile, scheduleReveal])
 
   const sendEdit = () => {
     if (canSend && ensureApiKey() && editMessage(sessionId, message.id, draft.trim())) {
@@ -79,7 +137,7 @@ export const UserMessage = memo(function UserMessage({
         </div>
       ) : null}
       {editing ? (
-        <div className={styles.editor}>
+        <div ref={editorRef} className={styles.editor}>
           <textarea
             ref={textareaRef}
             className={styles.textarea}
@@ -123,6 +181,8 @@ export const UserMessage = memo(function UserMessage({
                 disabled={busy}
                 onClick={() => {
                   setDraft(message.content)
+                  // 先于自动聚焦锁定视口，等键盘弹起时页面不再上移
+                  beginMessageEdit(message.id)
                   setEditing(true)
                 }}
               />
