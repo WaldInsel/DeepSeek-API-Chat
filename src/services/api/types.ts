@@ -182,7 +182,8 @@ export type CreateMessageRequest = {
   thinking: { type: 'enabled' | 'disabled' }
   output_config?: { effort: ThinkingEffort }
   tools: (DeepseekWebSearchTool | DeepseekReadUrlTool)[]
-  safety_check: { level: 'high' }
+  /** high=基础风控（审核输入与输出，输出后审会撤回）；low=API 默认检查，与不传相同 */
+  safety_check: { level: 'low' | 'high' }
   title?: { enabled: boolean }
 }
 
