@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import {
   IconDataOutline16,
   IconDownloadOutline16,
+  IconEditOutline16,
   IconPluginOutline16,
   IconSettingsOutline16,
   IconUploadOutline14,
@@ -29,7 +30,9 @@ import {
   type ThinkingCollapse,
 } from '../../services/settings.js'
 import { useTranslate, type TranslationKey, type TranslationMessage } from '../../i18n/index.js'
+import { plugins } from '../../plugins/index.js'
 import { Button } from '../base/Button.js'
+import { IconButton } from '../base/IconButton.js'
 import { Modal } from '../base/Modal.js'
 import { Select } from '../base/Select.js'
 import { showToast } from '../base/toastState.js'
@@ -394,17 +397,39 @@ const errorStatus = (key: TranslationKey, error: unknown): Status => ({
   error: true,
 })
 
-/** 自定义指令的字符上限，只限制 UI 输入 */
-const CUSTOM_INSTRUCTIONS_LIMIT = 4000
+/** 插件正文的字符上限，只限制 UI 输入 */
+const PLUGIN_PROMPT_LIMIT = 4000
 
-/** 编辑自定义指令；保存后写入插件配置，留空则不注入。 */
-const CustomInstructionsDialog = ({
+const readConfigText = (config: Record<string, unknown> | undefined): string =>
+  typeof config?.text === 'string' ? config.text : ''
+
+/** 从注册表取插件内置正文，作为编辑初值与留空回退 */
+const pluginDefaultText = (name: string): string =>
+  plugins.find((plugin) => plugin.name === name)?.defaultText ?? ''
+
+/**
+ * 编辑插件正文。
+ *
+ * 三个插件共用这一个弹窗：正文来自 config.text，没改过时显示 defaultText。
+ * 保存时若与内置正文一致就写入空字符串，让插件继续回退到内置正文，避免固化旧版本。
+ */
+const PluginPromptDialog = ({
   open,
+  name,
+  title,
+  builtin,
   initialText,
+  hint,
+  placeholder,
   onClose,
 }: {
   open: boolean
+  name: string
+  title: string
+  builtin: string
   initialText: string
+  hint: string
+  placeholder?: string
   onClose: () => void
 }) => {
   const t = useTranslate()
@@ -418,9 +443,10 @@ const CustomInstructionsDialog = ({
   if (!mounted) {
     return null
   }
+  const builtinText = builtin.trim()
   return (
     <Modal
-      title={t('pluginCustomInstructionsDialogTitle')}
+      title={title}
       className={styles.pluginDialog}
       mainClassName={styles.pluginDialogMain}
       state={visible ? 'open' : 'closed'}
@@ -433,9 +459,8 @@ const CustomInstructionsDialog = ({
           <Button
             size="m"
             onClick={() => {
-              setPluginConfig('custom-instructions', {
-                text: text.slice(0, CUSTOM_INSTRUCTIONS_LIMIT).trim(),
-              })
+              const trimmed = text.slice(0, PLUGIN_PROMPT_LIMIT).trim()
+              setPluginConfig(name, { text: trimmed === builtinText ? '' : trimmed })
               onClose()
             }}
           >
@@ -447,61 +472,90 @@ const CustomInstructionsDialog = ({
       <textarea
         className={styles.pluginTextarea}
         value={text}
-        maxLength={CUSTOM_INSTRUCTIONS_LIMIT}
-        placeholder={t('pluginCustomInstructionsPlaceholder')}
+        maxLength={PLUGIN_PROMPT_LIMIT}
+        placeholder={placeholder}
         autoFocus
         onChange={(event) => setText(event.target.value)}
       />
       <div className={styles.pluginCounter}>
         {t('pluginCustomInstructionsCounter', {
           count: text.length,
-          limit: CUSTOM_INSTRUCTIONS_LIMIT,
+          limit: PLUGIN_PROMPT_LIMIT,
         })}
       </div>
-      <div className={styles.pluginHint}>{t('pluginCustomInstructionsHint')}</div>
+      <div className={styles.pluginHint}>{hint}</div>
     </Modal>
   )
 }
 
-/** 一个插件行：开关状态直接写进 pluginSettings，插件名即持久化的 key。 */
+/** 一个插件行：开关与正文都写在 pluginSettings 里，插件名即持久化的 key。 */
 const PluginToggleCell = ({
   name,
   label,
   description,
+  hint,
+  placeholder,
+  editable = false,
 }: {
   name: string
   label: TranslationKey
   description: ReactNode
+  hint?: TranslationKey
+  placeholder?: TranslationKey
+  editable?: boolean
 }) => {
   const t = useTranslate()
-  const enabled = useSettings((state) => state.pluginSettings[name]?.enabled === true)
+  const state = useSettings((settings) => settings.pluginSettings[name])
+  const [editorOpen, setEditorOpen] = useState(false)
+  const builtin = pluginDefaultText(name)
+  const initialText = readConfigText(state?.config) || builtin
   return (
-    <SettingCell
-      label={t(label)}
-      description={description}
-      status={null}
-      action={
-        <Select
-          ariaLabel={t(label)}
-          value={enabled ? 'on' : 'off'}
-          options={[
-            { value: 'on', label: t('pluginToggleOn') },
-            { value: 'off', label: t('pluginToggleOff') },
-          ]}
-          onChange={(value) => setPluginEnabled(name, value === 'on')}
+    <>
+      <SettingCell
+        label={t(label)}
+        description={description}
+        status={null}
+        action={
+          <div className={styles.pluginActions}>
+            {editable ? (
+              <IconButton
+                size="xs"
+                icon={<IconEditOutline16 />}
+                tooltip={t('pluginPromptEditNamed', { name: t(label) })}
+                onClick={() => setEditorOpen(true)}
+              />
+            ) : null}
+            <Select
+              ariaLabel={t(label)}
+              value={state?.enabled === true ? 'on' : 'off'}
+              options={[
+                { value: 'on', label: t('pluginToggleOn') },
+                { value: 'off', label: t('pluginToggleOff') },
+              ]}
+              onChange={(value) => setPluginEnabled(name, value === 'on')}
+            />
+          </div>
+        }
+      />
+      {editable ? (
+        <PluginPromptDialog
+          open={editorOpen}
+          name={name}
+          title={t('pluginPromptDialogTitle', { name: t(label) })}
+          builtin={builtin}
+          initialText={initialText}
+          hint={t(hint ?? 'pluginPromptHintBuiltin')}
+          placeholder={placeholder ? t(placeholder) : undefined}
+          onClose={() => setEditorOpen(false)}
         />
-      }
-    />
+      ) : null}
+    </>
   )
 }
 
 /** 插件管理：内置插件与社区插件分栏，各自按注入位置排列（head → tail），开关控制是否进入请求的 system。 */
 const PluginManagement = () => {
   const t = useTranslate()
-  const customInstructions = useSettings((state) => state.pluginSettings['custom-instructions'])
-  const [editorOpen, setEditorOpen] = useState(false)
-  const text =
-    typeof customInstructions?.config?.text === 'string' ? customInstructions.config.text : ''
   return (
     <div className={styles.pluginList}>
       <section className={styles.pluginSection}>
@@ -509,18 +563,10 @@ const PluginManagement = () => {
         <PluginToggleCell
           name="custom-instructions"
           label="pluginCustomInstructionsLabel"
-          description={
-            <div className={styles.pluginDescription}>
-              <span>{t('pluginCustomInstructionsDescription')}</span>
-              <button
-                type="button"
-                className={styles.apiGuide}
-                onClick={() => setEditorOpen(true)}
-              >
-                {t('pluginCustomInstructionsEdit')}
-              </button>
-            </div>
-          }
+          description={t('pluginCustomInstructionsDescription')}
+          hint="pluginCustomInstructionsHint"
+          placeholder="pluginCustomInstructionsPlaceholder"
+          editable
         />
       </section>
       <section className={styles.pluginSection}>
@@ -529,19 +575,17 @@ const PluginManagement = () => {
           name="nsfw"
           label="pluginNsfwLabel"
           description={t('pluginNsfwDescription')}
+          hint="pluginPromptHintBuiltin"
+          editable
         />
         <PluginToggleCell
           name="purge"
           label="pluginPurgeLabel"
           description={t('pluginPurgeDescription')}
+          hint="pluginPromptHintBuiltin"
+          editable
         />
       </section>
-
-      <CustomInstructionsDialog
-        open={editorOpen}
-        initialText={text}
-        onClose={() => setEditorOpen(false)}
-      />
     </div>
   )
 }

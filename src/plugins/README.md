@@ -34,6 +34,9 @@ interface PluginState {
 - **默认关闭**：`states[name].enabled !== true` 的插件不执行，避免升级后静默改变请求。
 - **配置由宿主注入**：插件不读 localStorage，配置通过 `PluginContext.config` 传入；
   具体形状由插件自己收窄。
+- **正文可编辑**：插件导出 `defaultText`（内置正文）时，设置页的「编辑」弹窗以
+  `config.text || defaultText` 为初值；保存值与内置正文一致时写空串，让插件继续回退到
+  内置正文，避免把旧版本正文固化到本机设置里。
 - 开关只影响之后的新请求，不改历史消息和已经生成的内容。
 
 ## 三条铁律

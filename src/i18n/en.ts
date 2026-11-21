@@ -138,14 +138,15 @@ export const en = {
   pluginCustomInstructionsLabel: 'Custom instructions',
   pluginCustomInstructionsDescription:
     'When enabled, your global instructions are appended to the end of the system prompt on every request.',
-  pluginCustomInstructionsEdit: 'Edit instructions',
-  pluginCustomInstructionsDialogTitle: 'Edit custom instructions',
   pluginCustomInstructionsPlaceholder:
     'For example: lead with the conclusion, then explain why.',
   pluginCustomInstructionsHint: 'Nothing is injected when this is empty.',
   pluginCustomInstructionsCounter: '{count} / {limit}',
   pluginToggleOn: 'On',
   pluginToggleOff: 'Off',
+  pluginPromptEditNamed: 'Edit {name}',
+  pluginPromptDialogTitle: 'Edit {name}',
+  pluginPromptHintBuiltin: 'Leave empty to use the built-in text.',
   pluginNsfwLabel: 'NSFW fiction mode',
   pluginNsfwDescription:
     'When enabled, an 18+ fiction preamble is prepended to the system prompt on every request; character and scene setup take priority over generic assistant rules.',

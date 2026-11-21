@@ -38,6 +38,8 @@ export interface PromptPlugin {
   readonly name: string
   /** 多个插件时的执行顺序，小的先跑；不写按注册顺序 */
   readonly order?: number
+  /** 内置正文：设置页拿它当编辑初值与留空回退；真正拼什么仍以 apply() 为准 */
+  readonly defaultText?: string
   /** 唯一的扩展点：拿上下文，回补丁 */
   apply(context: PluginContext): PromptPatch | undefined
 }

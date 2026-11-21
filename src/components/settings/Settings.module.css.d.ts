@@ -19,7 +19,7 @@ declare const styles: {
   readonly "pluginSection": string;
   readonly "pluginSectionTitle": string;
   readonly "pluginSectionEmpty": string;
-
+  readonly "pluginActions": string;
   readonly "pluginDescription": string;
   readonly "pluginEmpty": string;
   readonly "pluginEmptyIcon": string;
