@@ -38,7 +38,7 @@ pnpm build
 构建在 GitHub Actions 中完成：
 
 - [desktop.yml](.github/workflows/desktop.yml)：Windows（NSIS）与 Linux 安装包。
-- [android.yml](.github/workflows/android.yml)：debug 与 release APK，配置四个签名 secret 后生成签名包。
+- [android.yml](.github/workflows/android.yml)：debug 与 release APK，配置四个签名 secret 后生成签名包；同时产出 `standard` 与 `legacy` 两份，`legacy` 面向 Android 9 等旧版系统 WebView。
 
 ## 数据与存储
 
@@ -52,6 +52,7 @@ API Key 和设置保存在浏览器 localStorage，会话及附件原件保存�
 | ------------- | ------------------- |
 | `pnpm dev`    | 启动开发服务器      |
 | `pnpm build`  | 构建到 `dist/`      |
+| `pnpm build:legacy` | 构建旧版 WebView 兼容产物 |
 | `pnpm type`   | TypeScript 类型检查 |
 | `pnpm lint`   | oxlint 检查         |
 | `pnpm format` | oxfmt 格式化        |

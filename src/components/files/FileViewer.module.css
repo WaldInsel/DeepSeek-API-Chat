@@ -49,6 +49,7 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
+  padding: 16px 16px calc(24px + var(--safe-bottom));
   padding: 16px max(16px, calc((100% - 820px) / 2)) calc(24px + var(--safe-bottom));
   overscroll-behavior: contain;
 }

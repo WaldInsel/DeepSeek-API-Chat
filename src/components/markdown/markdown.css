@@ -64,12 +64,9 @@
   h6 + ol {
     margin-top: 8px;
   }
-  h4:has(+ ul),
-  h5:has(+ ul),
-  h6:has(+ ul),
-  h4:has(+ ol),
-  h5:has(+ ol),
-  h6:has(+ ol) {
+  h4.ds-heading-before-list,
+  h5.ds-heading-before-list,
+  h6.ds-heading-before-list {
     margin-bottom: 8px;
   }
 }

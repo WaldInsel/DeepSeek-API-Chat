@@ -164,6 +164,7 @@ const MarkdownBlockContentOrDefinitionContent = memo(
     loading: boolean
   }) {
     return nodes.map((node, index) => {
+      const nextNode = nodes[index + 1]
       switch (node.type) {
         case 'math':
           return <MathBlock key={index} value={node.value} />
@@ -182,12 +183,22 @@ const MarkdownBlockContentOrDefinitionContent = memo(
             ? null
             : createElement(
                 `h${node.depth}`,
-                { key: index },
+                {
+                  key: index,
+                  // 替代 :has(+ ul/ol)：旧版 WebView 不支持 :has
+                  className: nextNode?.type === 'list' ? 'ds-heading-before-list' : undefined,
+                },
                 <MarkdownPhrasingContent nodes={node.children} />
               )
         case 'paragraph':
           return (
-            <p key={index} className="ds-markdown-paragraph">
+            <p
+              key={index}
+              className={clsx(
+                'ds-markdown-paragraph',
+                nextNode?.type === 'list' && nextNode.ordered && 'ds-markdown-paragraph-before-list'
+              )}
+            >
               <MarkdownPhrasingContent nodes={node.children} />
             </p>
           )
