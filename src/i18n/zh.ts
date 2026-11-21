@@ -135,8 +135,7 @@ export const zh = {
   pluginCustomInstructionsPlaceholder: '例如：回答时先给结论，再解释原因。',
   pluginCustomInstructionsHint: '留空时不会注入任何内容。',
   pluginCustomInstructionsCounter: '{count} / {limit}',
-  pluginToggleOn: '开启',
-  pluginToggleOff: '关闭',
+
   pluginPromptEditNamed: '编辑 {name}',
   pluginPromptDialogTitle: '编辑 {name}',
   pluginPromptHintBuiltin: '留空时使用插件内置正文。',

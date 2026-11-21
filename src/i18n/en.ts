@@ -142,8 +142,7 @@ export const en = {
     'For example: lead with the conclusion, then explain why.',
   pluginCustomInstructionsHint: 'Nothing is injected when this is empty.',
   pluginCustomInstructionsCounter: '{count} / {limit}',
-  pluginToggleOn: 'On',
-  pluginToggleOff: 'Off',
+
   pluginPromptEditNamed: 'Edit {name}',
   pluginPromptDialogTitle: 'Edit {name}',
   pluginPromptHintBuiltin: 'Leave empty to use the built-in text.',

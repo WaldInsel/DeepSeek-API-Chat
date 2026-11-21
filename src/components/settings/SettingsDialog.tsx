@@ -35,6 +35,7 @@ import { Button } from '../base/Button.js'
 import { IconButton } from '../base/IconButton.js'
 import { Modal } from '../base/Modal.js'
 import { Select } from '../base/Select.js'
+import { Switch } from '../base/Switch.js'
 import { showToast } from '../base/toastState.js'
 import { usePresence } from '../base/usePresence.js'
 import { ApiKeyConfirm, ApiKeyField, useApiKeyEditor } from './ApiKeyField.js'
@@ -525,14 +526,10 @@ const PluginToggleCell = ({
                 onClick={() => setEditorOpen(true)}
               />
             ) : null}
-            <Select
-              ariaLabel={t(label)}
-              value={state?.enabled === true ? 'on' : 'off'}
-              options={[
-                { value: 'on', label: t('pluginToggleOn') },
-                { value: 'off', label: t('pluginToggleOff') },
-              ]}
-              onChange={(value) => setPluginEnabled(name, value === 'on')}
+            <Switch
+              aria-label={t(label)}
+              checked={state?.enabled === true}
+              onChange={(enabled) => setPluginEnabled(name, enabled)}
             />
           </div>
         }
