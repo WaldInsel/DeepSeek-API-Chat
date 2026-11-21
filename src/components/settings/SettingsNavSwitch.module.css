@@ -1,0 +1,99 @@
+.navSwitcher {
+  position: relative;
+  display: flex;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  width: 100%;
+  height: 40px;
+  margin: 6px 0 0;
+  padding: 2px;
+  gap: 4px;
+  border-radius: 999px;
+  background-color: var(--dsw-specific-selector);
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.indicator {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  box-sizing: border-box;
+  width: calc(33.3333% - 4px);
+  height: calc(100% - 4px);
+  border: 1px solid var(--dsw-static-neutral-bluish-200);
+  border-radius: 999px;
+  background-color: var(--dsw-static-neutral-bluish-00);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  transform: translateX(var(--nav-drag-x, 0px));
+  will-change: transform;
+  transition:
+    left 0.24s cubic-bezier(0.2, 0.8, 0.2, 1),
+    transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  [data-ds-dark-theme] & {
+    border-color: rgba(255, 255, 255, 0.06);
+    background-color: var(--dsw-static-neutral-bluish-700);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  }
+}
+
+.indicator[data-index='1'] {
+  left: calc(33.3333% + 2px);
+}
+
+.indicator[data-index='2'] {
+  left: calc(66.6667% + 2px);
+}
+
+.option {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 36px;
+  padding: 0 6px;
+  border: none;
+  border-radius: 999px;
+  background-color: transparent;
+  color: var(--dsw-alias-label-secondary);
+  font: inherit;
+  font-size: 0.8125rem;
+  line-height: 20px;
+  font-weight: var(--fw-medium);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  transition: color var(--ds-transition-duration) var(--ds-ease-in-out);
+
+  &:hover {
+    color: var(--dsw-alias-label-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--dsw-static-neutral-bluish-400);
+    outline-offset: 2px;
+  }
+
+  &.selected {
+    color: var(--dsw-alias-label-primary);
+  }
+
+  svg {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.label {
+  display: inline-block;
+}
+
+.icon {
+  display: inline-flex;
+}

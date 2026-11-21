@@ -69,6 +69,36 @@
   }
 }
 
+.pullEnabled {
+  position: relative;
+}
+
+.pullHandle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 100%;
+  height: 18px;
+  padding-top: 7px;
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+}
+
+.pullBar {
+  width: 56px;
+  height: 3px;
+  border-radius: 999px;
+  background-color: var(--dsw-static-neutral-bluish-00);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.06),
+    0 1px 2px rgba(0, 0, 0, 0.16);
+}
+
 .header {
   display: flex;
   align-items: center;

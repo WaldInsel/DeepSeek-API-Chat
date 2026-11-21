@@ -40,6 +40,7 @@ import {
 } from './historyImportState.js'
 import { closeSettings, useSettingsDialog, type SettingsSection } from './settingsDialogState.js'
 import { ImportDialog } from './ImportDialog.js'
+import { SettingsNavSwitch } from './SettingsNavSwitch.js'
 import { ImportProgress } from './ImportProgress.js'
 import { UpdateCheck } from './UpdateCheck.js'
 import styles from './Settings.module.css'
@@ -90,27 +91,32 @@ const SettingsContent = ({ state }: { state: 'open' | 'closed' }) => {
         className={styles.dialog}
         mainClassName={styles.dialogMain}
         state={state}
+        pullDownToClose
         onClose={() => {
           if (!historyDelete.busy) {
             closeSettings()
           }
         }}
       >
-        <div role="tablist" className={styles.navigation}>
-          {sections.map((item) => (
-            <button
-              key={item.value}
-              type="button"
-              role="tab"
-              aria-selected={section === item.value}
-              className={clsx(styles.navItem, section === item.value && styles.navItemActive)}
-              onClick={() => setSection(item.value)}
-            >
-              {item.icon}
-              {t(item.label)}
-            </button>
-          ))}
-        </div>
+        {isMobile ? (
+          <SettingsNavSwitch items={sections} value={section} onChange={setSection} />
+        ) : (
+          <div role="tablist" className={styles.navigation}>
+            {sections.map((item) => (
+              <button
+                key={item.value}
+                type="button"
+                role="tab"
+                aria-selected={section === item.value}
+                className={clsx(styles.navItem, section === item.value && styles.navItemActive)}
+                onClick={() => setSection(item.value)}
+              >
+                {item.icon}
+                {t(item.label)}
+              </button>
+            ))}
+          </div>
+        )}
         <div role="tabpanel" className={styles.content}>
           {section === 'general' ? (
             <>
