@@ -83,3 +83,68 @@ if (!('replaceAll' in String.prototype)) {
     writable: true,
   })
 }
+if (!('toReversed' in Array.prototype)) {
+  Object.defineProperty(Array.prototype, 'toReversed', {
+    value<T>(this: T[]): T[] {
+      return this.slice().reverse()
+    },
+    configurable: true,
+    writable: true,
+  })
+}
+
+if (!('toSorted' in Array.prototype)) {
+  Object.defineProperty(Array.prototype, 'toSorted', {
+    value<T>(this: T[], compareFn?: (a: T, b: T) => number): T[] {
+      return this.slice().sort(compareFn)
+    },
+    configurable: true,
+    writable: true,
+  })
+}
+
+const createAbortError = () =>
+  typeof DOMException === 'function'
+    ? new DOMException('This operation was aborted', 'AbortError')
+    : Object.assign(new Error('This operation was aborted'), { name: 'AbortError' })
+
+if (!('reason' in AbortSignal.prototype)) {
+  Object.defineProperty(AbortSignal.prototype, 'reason', {
+    get(this: AbortSignal): unknown {
+      return this.aborted ? createAbortError() : undefined
+    },
+    configurable: true,
+  })
+}
+
+if (!('throwIfAborted' in AbortSignal.prototype)) {
+  Object.defineProperty(AbortSignal.prototype, 'throwIfAborted', {
+    value(this: AbortSignal): void {
+      if (this.aborted) {
+        throw this.reason ?? createAbortError()
+      }
+    },
+    configurable: true,
+    writable: true,
+  })
+}
+
+if (!('arrayBuffer' in Blob.prototype)) {
+  Object.defineProperty(Blob.prototype, 'arrayBuffer', {
+    value(this: Blob): Promise<ArrayBuffer> {
+      return new Response(this).arrayBuffer()
+    },
+    configurable: true,
+    writable: true,
+  })
+}
+
+if (!('text' in Blob.prototype)) {
+  Object.defineProperty(Blob.prototype, 'text', {
+    value(this: Blob): Promise<string> {
+      return new Response(this).text()
+    },
+    configurable: true,
+    writable: true,
+  })
+}
