@@ -104,8 +104,15 @@
   opacity: 1;
 }
 
-.continueButton {
+.bottomRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin-left: auto;
+}
+
+.continueButton {
+  margin-left: 0;
 }
 
 .summary {

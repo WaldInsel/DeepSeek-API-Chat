@@ -303,6 +303,24 @@ export const IconRefreshOutline16 = () => (
   </svg>
 )
 
+export const IconDatabaseOutline16 = () => (
+  <svg width={16} height={16} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx={8} cy={3.9} rx={5.4} ry={2.1} stroke="currentColor" strokeWidth={1.4} />
+    <path
+      d="M2.6 3.9v8.2c0 1.16 2.42 2.1 5.4 2.1s5.4-.94 5.4-2.1V3.9"
+      stroke="currentColor"
+      strokeWidth={1.4}
+      strokeLinecap="round"
+    />
+    <path
+      d="M2.6 8c0 1.16 2.42 2.1 5.4 2.1s5.4-.94 5.4-2.1"
+      stroke="currentColor"
+      strokeWidth={1.4}
+      strokeLinecap="round"
+    />
+  </svg>
+)
+
 export const IconBranchOutline16 = () => (
   <svg width={16} height={16} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M4.4 8h3.4" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" />

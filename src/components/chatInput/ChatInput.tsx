@@ -78,7 +78,7 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
   } = useAnchoredPosition<HTMLButtonElement, HTMLDivElement>(effortOpen, {
     side: 'top',
     align: 'start',
-    offset: 8,
+    offset: 12,
   })
   const effortPositionRef = useRef(effortPosition)
   if (effortPosition) {

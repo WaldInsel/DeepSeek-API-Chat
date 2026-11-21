@@ -26,6 +26,7 @@ import { toggleSearchPanel, useSearchPanel } from '../search/searchPanelState.js
 import { showToast } from '../base/toastState.js'
 import { ReadAloudButton } from './ReadAloudButton.js'
 import { CopyButton } from './CopyButton.js'
+import { TokenUsagePopover } from './TokenUsagePopover.js'
 import { ReplyArea } from './ReplyArea.js'
 import { useReplyView } from './useReplyView.js'
 import {
@@ -71,6 +72,7 @@ export const AssistantMessage = memo(function AssistantMessage({
     .join('\n\n')
   const copyText = responseText || notice?.text
   const waiting = streaming && view.steps.length === 0 && !view.answer && !message.thinking
+  const canContinue = isLast && canContinueReply(message)
   const summaryEntry = `${message.id}-summary`
   // 移动端自动朗读：只在流式结束的那一刻触发一次，打开历史会话不会读旧消息
   const wasStreaming = useRef(streaming)
@@ -200,19 +202,24 @@ export const AssistantMessage = memo(function AssistantMessage({
               }}
             />
           </div>
-          {isLast && canContinueReply(message) ? (
-            <Button
-              variant="outlined"
-              size="s"
-              className={styles.continueButton}
-              disabled={busy}
-              onClick={() => {
-                stopReadAloud()
-                continueReply(sessionId, message.id)
-              }}
-            >
-              {t('continueGenerating')}
-            </Button>
+          {canContinue || message.usage ? (
+            <div className={styles.bottomRight}>
+              {canContinue ? (
+                <Button
+                  variant="outlined"
+                  size="s"
+                  className={styles.continueButton}
+                  disabled={busy}
+                  onClick={() => {
+                    stopReadAloud()
+                    continueReply(sessionId, message.id)
+                  }}
+                >
+                  {t('continueGenerating')}
+                </Button>
+              ) : null}
+              {message.usage ? <TokenUsagePopover usage={message.usage} /> : null}
+            </div>
           ) : null}
         </div>
       )}

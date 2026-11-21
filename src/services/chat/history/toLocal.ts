@@ -213,6 +213,7 @@ const toAssistant = (message: ChatMessage): AssistantMessage => {
   const id = String(message.id)
   const blocks = toBlocks(message.fragments, id)
   const refused = message.status === 'CONTENT_FILTER'
+  const contextTokens = message.accumulated_token_usage
   return {
     id,
     role: 'assistant',
@@ -222,6 +223,16 @@ const toAssistant = (message: ChatMessage): AssistantMessage => {
     search: message.search_enabled,
     prefix: false,
     status: replyStatus[message.status],
+    ...(contextTokens > 0
+      ? {
+          usage: {
+            input_tokens: contextTokens,
+            cache_creation_input_tokens: 0,
+            cache_read_input_tokens: 0,
+            output_tokens: 0,
+          },
+        }
+      : {}),
     // 拒绝回复丢弃模型正文和思考，保留模板提示与工具步骤。
     ...(refused ? { stopReason: 'refusal' as const } : {}),
     blocks: refused
