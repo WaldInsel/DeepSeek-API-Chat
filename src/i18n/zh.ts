@@ -139,6 +139,17 @@ export const zh = {
   pluginCustomInstructionsCounter: '{count} / {limit}',
   pluginToggleOn: '开启',
   pluginToggleOff: '关闭',
+  pluginNsfwLabel: 'NSFW 创作模式',
+  pluginNsfwDescription:
+    '开启后，在每次请求的 system 最前面注入 18+ 虚构创作总纲；角色与场景设定优先于通用助手规范。',
+  pluginPurgeLabel: '拒答兜底（Purge）',
+  pluginPurgeDescription:
+    '开启后，在每次请求的 system 末尾追加兜底规则，压掉首轮的推脱、免责声明与自我弱化。',
+
+  pluginSectionBuiltin: '内置插件',
+  pluginSectionCommunity: '非官方插件',
+  pluginCommunityEmpty:
+    '暂无非官方插件。非官方插件以编译期社区插件形式随包发布，暂不支持运行时安装。',
   updateSettingLabel: '软件版本',
   updateCheckButton: '检查更新',
   updateDialogTitle: '检查更新',

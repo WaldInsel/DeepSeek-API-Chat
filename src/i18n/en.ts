@@ -146,6 +146,17 @@ export const en = {
   pluginCustomInstructionsCounter: '{count} / {limit}',
   pluginToggleOn: 'On',
   pluginToggleOff: 'Off',
+  pluginNsfwLabel: 'NSFW fiction mode',
+  pluginNsfwDescription:
+    'When enabled, an 18+ fiction preamble is prepended to the system prompt on every request; character and scene setup take priority over generic assistant rules.',
+  pluginPurgeLabel: 'Refusal fallback (Purge)',
+  pluginPurgeDescription:
+    'When enabled, fallback rules are appended to the end of the system prompt to suppress first-turn hedging, disclaimers, and softer rewrites.',
+
+  pluginSectionBuiltin: 'Built-in plugins',
+  pluginSectionCommunity: 'Unofficial plugins',
+  pluginCommunityEmpty:
+    'No unofficial plugins yet. Unofficial plugins are bundled at build time as community plugins; runtime installation is not supported.',
   updateSettingLabel: 'Software version',
   updateCheckButton: 'Check for updates',
   updateDialogTitle: 'Check for updates',

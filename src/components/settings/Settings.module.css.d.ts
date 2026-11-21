@@ -16,6 +16,10 @@ declare const styles: {
   readonly "description": string;
   readonly "error": string;
   readonly "pluginList": string;
+  readonly "pluginSection": string;
+  readonly "pluginSectionTitle": string;
+  readonly "pluginSectionEmpty": string;
+
   readonly "pluginDescription": string;
   readonly "pluginEmpty": string;
   readonly "pluginEmptyIcon": string;

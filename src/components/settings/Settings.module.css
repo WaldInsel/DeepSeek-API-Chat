@@ -342,6 +342,33 @@
   min-height: 0;
 }
 
+.pluginSection {
+  display: flex;
+  flex-direction: column;
+
+  & + & {
+    margin-top: 16px;
+    padding-top: 16px;
+    box-shadow: inset 0 1px 0 0 var(--dsw-alias-border-l2-darkmode-thin);
+  }
+}
+
+.pluginSectionTitle {
+  padding: 8px 0 4px;
+  font-size: 0.75rem;
+  line-height: 18px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.pluginSectionEmpty {
+  padding: 16px 0 8px;
+  font-size: 0.75rem;
+  line-height: 18px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+
+
 .pluginEmpty {
   display: flex;
   flex: 1;

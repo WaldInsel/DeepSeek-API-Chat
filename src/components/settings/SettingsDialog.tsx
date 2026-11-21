@@ -463,7 +463,39 @@ const CustomInstructionsDialog = ({
   )
 }
 
-/** 插件管理：第一项为自定义指令，开关控制是否进入请求的 system。 */
+/** 一个插件行：开关状态直接写进 pluginSettings，插件名即持久化的 key。 */
+const PluginToggleCell = ({
+  name,
+  label,
+  description,
+}: {
+  name: string
+  label: TranslationKey
+  description: ReactNode
+}) => {
+  const t = useTranslate()
+  const enabled = useSettings((state) => state.pluginSettings[name]?.enabled === true)
+  return (
+    <SettingCell
+      label={t(label)}
+      description={description}
+      status={null}
+      action={
+        <Select
+          ariaLabel={t(label)}
+          value={enabled ? 'on' : 'off'}
+          options={[
+            { value: 'on', label: t('pluginToggleOn') },
+            { value: 'off', label: t('pluginToggleOff') },
+          ]}
+          onChange={(value) => setPluginEnabled(name, value === 'on')}
+        />
+      }
+    />
+  )
+}
+
+/** 插件管理：内置插件与社区插件分栏，各自按注入位置排列（head → tail），开关控制是否进入请求的 system。 */
 const PluginManagement = () => {
   const t = useTranslate()
   const customInstructions = useSettings((state) => state.pluginSettings['custom-instructions'])
@@ -472,33 +504,39 @@ const PluginManagement = () => {
     typeof customInstructions?.config?.text === 'string' ? customInstructions.config.text : ''
   return (
     <div className={styles.pluginList}>
-      <SettingCell
-        label={t('pluginCustomInstructionsLabel')}
-        description={
-          <div className={styles.pluginDescription}>
-            <span>{t('pluginCustomInstructionsDescription')}</span>
-            <button
-              type="button"
-              className={styles.apiGuide}
-              onClick={() => setEditorOpen(true)}
-            >
-              {t('pluginCustomInstructionsEdit')}
-            </button>
-          </div>
-        }
-        status={null}
-        action={
-          <Select
-            ariaLabel={t('pluginCustomInstructionsLabel')}
-            value={customInstructions?.enabled ? 'on' : 'off'}
-            options={[
-              { value: 'on', label: t('pluginToggleOn') },
-              { value: 'off', label: t('pluginToggleOff') },
-            ]}
-            onChange={(value) => setPluginEnabled('custom-instructions', value === 'on')}
-          />
-        }
-      />
+      <section className={styles.pluginSection}>
+        <div className={styles.pluginSectionTitle}>{t('pluginSectionBuiltin')}</div>
+        <PluginToggleCell
+          name="custom-instructions"
+          label="pluginCustomInstructionsLabel"
+          description={
+            <div className={styles.pluginDescription}>
+              <span>{t('pluginCustomInstructionsDescription')}</span>
+              <button
+                type="button"
+                className={styles.apiGuide}
+                onClick={() => setEditorOpen(true)}
+              >
+                {t('pluginCustomInstructionsEdit')}
+              </button>
+            </div>
+          }
+        />
+      </section>
+      <section className={styles.pluginSection}>
+        <div className={styles.pluginSectionTitle}>{t('pluginSectionCommunity')}</div>
+        <PluginToggleCell
+          name="nsfw"
+          label="pluginNsfwLabel"
+          description={t('pluginNsfwDescription')}
+        />
+        <PluginToggleCell
+          name="purge"
+          label="pluginPurgeLabel"
+          description={t('pluginPurgeDescription')}
+        />
+      </section>
+
       <CustomInstructionsDialog
         open={editorOpen}
         initialText={text}
