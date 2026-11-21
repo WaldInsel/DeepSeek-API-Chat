@@ -31,6 +31,9 @@ import styles from './Sider.module.css'
 /** 首屏与每次滚动到底补载的会话条数 */
 const PAGE_SIZE = 100
 
+/** 抽屉关闭后会卸载，重新打开时用它恢复滚动位置和已加载条数 */
+const scrollMemory = { top: 0, count: PAGE_SIZE }
+
 /** 展开的侧边栏：名称与收起按钮、开启新对话、按时间分组的会话列表、底部设置；移动端放在抽屉里，收起按钮关闭抽屉 */
 export const Sider = ({
   mobile = false,
@@ -46,7 +49,9 @@ export const Sider = ({
   const [now, setNow] = useState(Date.now)
   const pinnedIds = usePinnedSessions((state) => state.ids)
   const pinnedSet = useMemo(() => new Set(pinnedIds), [pinnedIds])
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  const [visibleCount, setVisibleCount] = useState(() =>
+    Math.max(PAGE_SIZE, scrollMemory.count)
+  )
   const listRef = useRef<HTMLDivElement>(null)
   const groups = useMemo(
     () => groupSessions(sessions, now, t, pinnedIds),
@@ -88,6 +93,18 @@ export const Sider = ({
     }
   }, [])
 
+  // 重新挂载时恢复上次的滚动位置；桌面常驻侧栏本身不会丢位置。
+  useLayoutEffect(() => {
+    const el = listRef.current
+    if (el) {
+      el.scrollTop = scrollMemory.top
+    }
+  }, [])
+
+  useLayoutEffect(() => {
+    scrollMemory.count = visibleCount
+  }, [visibleCount])
+
   // 首屏不足一屏时继续补载，避免滚动条不出现导致无法触发加载。
   useLayoutEffect(() => {
     const el = listRef.current
@@ -99,6 +116,7 @@ export const Sider = ({
 
   const loadMore = (event: React.UIEvent<HTMLDivElement>) => {
     const el = event.currentTarget
+    scrollMemory.top = el.scrollTop
     if (visibleCount >= total) {
       return
     }
