@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { createId } from '../../utils/id.js'
 import { prunePinnedSessions, removePinnedSession } from './pinned.js'
 import { ApiError, streamMessage } from '../api/client.js'
+import { composeSystemPrompt } from '../../plugins/index.js'
 import type { CreateMessageRequest } from '../api/types.js'
 import { currentChatModel } from '../chatMode.js'
 import { extractFileIds, getFileErrorCode, isRetryableApiError } from '../api/errors.js'
@@ -65,8 +66,11 @@ const SYSTEM_PROMPT = `你是 DeepSeek，由深度求索公司开发。
 - 用户请求有害内容时，简短说明原因并给出替代方向，不说教。`
 /** 保留最近打开的详情；当前会话、生成中及尚未成功保存的会话不淘汰。 */
 const SESSION_CACHE_LIMIT = 5
-/** 安全审核固定开启，所有请求都走扩展模式 */
-const SAFETY_CHECK = { level: 'high' } as const
+/**
+ * 安全审核档位：high=基础风控，服务端会在输出结束后再审一次，不过则以 refusal 结束并撤回正文；
+ * low=API 默认检查（与不传 safety_check 相同）。改 high 会重新出现"输出完被撤回"。
+ */
+const SAFETY_CHECK = { level: 'low' } as const
 /** 服务端判定 file_id 失效后，重新补传并重发的最多次数（不含首次请求） */
 const FILE_RETRY_LIMIT = 2
 /** 退避基数，第 n 次重试等待 2^n 倍；连续失败达到上限就放弃，把原始报错展示出来 */
@@ -1121,7 +1125,8 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
           useSettings.getState().apiKey ?? '',
           {
             model: initial.model ?? currentChatModel(),
-            system: SYSTEM_PROMPT,
+            // 编译期内置插件：把 system 提示词过一遍 src/plugins 注册表（插件出错不影响请求）
+            system: composeSystemPrompt(SYSTEM_PROMPT, messages),
             messages,
             thinking: { type: initial.thinking ? 'enabled' : 'disabled' },
             ...(initial.thinking
