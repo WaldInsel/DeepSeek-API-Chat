@@ -29,6 +29,15 @@
   margin-left: 113px;
 }
 
+/* 桌面端模式切换固定在对话区右上角，不随消息滚动 */
+.modeAnchor {
+  position: absolute;
+  top: 21px;
+  right: 18px;
+  z-index: 20;
+  display: flex;
+}
+
 .inputContainer {
   position: sticky;
   bottom: 0;

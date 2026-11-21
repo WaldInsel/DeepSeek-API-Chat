@@ -26,12 +26,16 @@ export const SessionView = ({
       {isMobile ? (
         <MobileHeader title={title} extra={<SessionModeSwitcher />} />
       ) : (
-        <div className={styles.header}>
-          <div className={clsx(styles.title, siderCollapsed && styles.withCollapsedSider)}>
-            {title}
+        <>
+          <div className={styles.header}>
+            <div className={clsx(styles.title, siderCollapsed && styles.withCollapsedSider)}>
+              {title}
+            </div>
           </div>
-          <SessionModeSwitcher />
-        </div>
+          <div className={styles.modeAnchor}>
+            <SessionModeSwitcher />
+          </div>
+        </>
       )}
       <MessageList
         key={session.id}
