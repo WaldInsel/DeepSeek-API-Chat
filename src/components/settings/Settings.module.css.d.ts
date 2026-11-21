@@ -15,6 +15,11 @@ declare const styles: {
 
   readonly "description": string;
   readonly "error": string;
+  readonly "pluginList": string;
+  readonly "pluginEmpty": string;
+  readonly "pluginEmptyIcon": string;
+  readonly "pluginEmptyTitle": string;
+  readonly "pluginEmptyDescription": string;
   readonly "importProgress": string;
   readonly "importProgressTrack": string;
   readonly "importProgressFill": string;

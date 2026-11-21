@@ -319,6 +319,47 @@
   }
 }
 
+.pluginList {
+  display: flex;
+  flex: 1 0 0;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.pluginEmpty {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 32px 0;
+  text-align: center;
+}
+
+.pluginEmptyIcon {
+  display: flex;
+  margin-bottom: 4px;
+  color: var(--dsw-alias-label-caption);
+
+  svg {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+.pluginEmptyTitle {
+  font-size: 0.875rem;
+  line-height: 22px;
+  color: var(--dsw-alias-label-primary);
+}
+
+.pluginEmptyDescription {
+  font-size: 0.75rem;
+  line-height: 18px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
 .importProgress {
   display: flex;
   align-items: center;

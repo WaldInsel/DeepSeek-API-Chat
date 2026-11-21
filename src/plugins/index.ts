@@ -6,7 +6,7 @@
  *
  * 宿主只在 src/services/chat/store.ts 组装请求时调用一次 composeSystemPrompt()。
  */
-import type { PluginContext, PluginMessage, PromptPatch, PromptPlugin } from './types.js'
+import type { PluginMessage, PromptPatch, PromptPlugin } from './types.js'
 import { nsfwPlugin } from './nsfw/index.js'
 import { purgePlugin } from './purge/index.js'
 

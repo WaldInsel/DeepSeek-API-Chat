@@ -127,6 +127,9 @@ export const zh = {
 
   settingDialogAsideGeneralOptionLabel: '通用设置',
   settingDialogAsideDataOptionLabel: '数据管理',
+  settingDialogAsidePluginsOptionLabel: '插件管理',
+  pluginManagementEmptyTitle: '暂无插件',
+  pluginManagementEmptyDescription: '插件会显示在这里。',
   updateSettingLabel: '软件版本',
   updateCheckButton: '检查更新',
   updateDialogTitle: '检查更新',

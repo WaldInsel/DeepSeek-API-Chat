@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import {
   IconDataOutline16,
   IconDownloadOutline16,
+  IconPluginOutline16,
   IconSettingsOutline16,
   IconUploadOutline14,
 } from '../base/icons.js'
@@ -44,8 +45,8 @@ import { UpdateCheck } from './UpdateCheck.js'
 import styles from './Settings.module.css'
 
 /**
- * 设置弹窗：分「通用设置」（主题、语言、朗读音色）与「数据管理」（API Key、导入、导出、删除）。
- * 桌面端为居中弹窗、左侧导航；移动端为底部弹层、导航横排在内容上方
+ * 设置弹窗：分「通用设置」（主题、语言、朗读音色）、「数据管理」（API Key、导入、导出、删除）
+ * 与「插件管理」。桌面端为居中弹窗、左侧导航；移动端为底部弹层、导航横排在内容上方
  */
 export const SettingsDialog = () => {
   const open = useSettingsDialog((state) => state.open)
@@ -61,6 +62,11 @@ const sections: { value: SettingsSection; label: TranslationKey; icon: ReactNode
     icon: <IconSettingsOutline16 />,
   },
   { value: 'data', label: 'settingDialogAsideDataOptionLabel', icon: <IconDataOutline16 /> },
+  {
+    value: 'plugins',
+    label: 'settingDialogAsidePluginsOptionLabel',
+    icon: <IconPluginOutline16 />,
+  },
 ]
 
 const SettingsContent = ({ state }: { state: 'open' | 'closed' }) => {
@@ -114,6 +120,8 @@ const SettingsContent = ({ state }: { state: 'open' | 'closed' }) => {
               <TtsVoiceSetting />
               <UpdateCheck />
             </>
+          ) : section === 'plugins' ? (
+            <PluginManagement />
           ) : (
             <>
               <ApiKeyField editor={apiKeyEditor} />
@@ -377,6 +385,22 @@ const errorStatus = (key: TranslationKey, error: unknown): Status => ({
     : { params: { message: error instanceof Error ? error.message : String(error) } }),
   error: true,
 })
+
+/** 插件管理：插件列表暂时为空，只渲染空状态。 */
+const PluginManagement = () => {
+  const t = useTranslate()
+  return (
+    <div className={styles.pluginList}>
+      <div className={styles.pluginEmpty}>
+        <span className={styles.pluginEmptyIcon}>
+          <IconPluginOutline16 />
+        </span>
+        <div className={styles.pluginEmptyTitle}>{t('pluginManagementEmptyTitle')}</div>
+        <div className={styles.pluginEmptyDescription}>{t('pluginManagementEmptyDescription')}</div>
+      </div>
+    </div>
+  )
+}
 
 const SettingCell = ({
   label,

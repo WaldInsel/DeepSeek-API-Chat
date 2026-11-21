@@ -132,6 +132,9 @@ export const en = {
 
   settingDialogAsideGeneralOptionLabel: 'General',
   settingDialogAsideDataOptionLabel: 'Data',
+  settingDialogAsidePluginsOptionLabel: 'Plugins',
+  pluginManagementEmptyTitle: 'No plugins yet',
+  pluginManagementEmptyDescription: 'Plugins will appear here.',
   updateSettingLabel: 'Software version',
   updateCheckButton: 'Check for updates',
   updateDialogTitle: 'Check for updates',
