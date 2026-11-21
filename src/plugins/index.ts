@@ -2,18 +2,29 @@
  * 插件注册表 —— 宿主唯一认的入口。
  *
  * 这个项目是"静态写死 + 编译期打包"的架构，没有运行时模块加载，所以插件也不做动态加载：
- * 加插件 = 在 plugins 数组里加一行；删插件 = 删一行。写进来即生效，没有开关。
+ * 加插件 = 在 plugins 数组里加一行；删插件 = 删一行。
  *
  * 宿主只在 src/services/chat/store.ts 组装请求时调用一次 composeSystemPrompt()。
  */
 import type { PluginMessage, PromptPatch, PromptPlugin } from './types.js'
+import { customInstructionsPlugin } from './custom-instructions/index.js'
 import { nsfwPlugin } from './nsfw/index.js'
 import { purgePlugin } from './purge/index.js'
 
 export type { PluginContext, PluginMessage, PromptPatch, PromptPlugin } from './types.js'
 
+/** 宿主传给注册表的插件状态：默认关闭，必须显式开启才会执行 */
+export interface PluginState {
+  readonly enabled?: boolean
+  readonly config?: unknown
+}
+
 /** 注册表：顺序不重要，真正的执行顺序看各自的 order */
-export const plugins: readonly PromptPlugin[] = [nsfwPlugin, purgePlugin]
+export const plugins: readonly PromptPlugin[] = [
+  nsfwPlugin,
+  purgePlugin,
+  customInstructionsPlugin,
+]
 
 /** 最近一次运行失败记录，供将来的设置页展示；不在控制台打印（项目 lint 禁 no-console） */
 export interface PluginError {
@@ -58,15 +69,21 @@ const combine = (text: string, patch: PromptPatch): string => {
  * 把 system 提示词过一遍所有插件，返回最终文本。
  *
  * 铁律：单个插件抛错只记录、不抛出 —— 一次提示词拼接失败，绝不能变成一次请求失败。
+ * 插件默认关闭：states 里没有显式 enabled: true 的插件不执行，避免升级后静默改变请求。
  */
 export const composeSystemPrompt = (
   system: string,
-  messages: readonly PluginMessage[] = []
+  messages: readonly PluginMessage[] = [],
+  states: Readonly<Record<string, PluginState>> = {}
 ): string => {
   let text = system
   for (const plugin of [...plugins].sort(byOrder)) {
+    const state = states[plugin.name]
+    if (state?.enabled !== true) {
+      continue
+    }
     try {
-      const patch = plugin.apply({ system: text, messages })
+      const patch = plugin.apply({ system: text, messages, config: state.config })
       if (patch) {
         text = combine(text, patch)
       }

@@ -11,7 +11,13 @@ export type ThemePreference = 'light' | 'dark' | 'system'
 /** 思考内容的呈现方式：完全折叠 / 部分折叠（限高滚动）/ 不折叠 */
 export type ThinkingCollapse = 'full' | 'partial' | 'none'
 
-/** 本机设置，存 localStorage：API Key、语言、主题、位置、朗读音色、自动朗读、深度思考与强度、智能搜索开关、思考折叠、侧边栏收起状态 */
+/** 插件在本机的状态；默认关闭，config 由各插件自行约定形状 */
+export type PluginSettings = Record<
+  string,
+  { enabled: boolean; config?: Record<string, unknown> }
+>
+
+/** 本机设置，存 localStorage：API Key、语言、主题、位置、朗读音色、自动朗读、深度思考与强度、智能搜索开关、思考折叠、侧边栏收起状态、插件状态 */
 type Settings = {
   apiKey: string | null
   locale: Locale
@@ -24,6 +30,7 @@ type Settings = {
   thinkingCollapse: ThinkingCollapse
   search: boolean
   siderCollapsed: boolean
+  pluginSettings: PluginSettings
 }
 
 const KEYS = {
@@ -38,6 +45,7 @@ const KEYS = {
   thinkingCollapse: 'deepseek-api-chat:thinking-collapse',
   search: 'deepseek-api-chat:search',
   siderCollapsed: 'deepseek-api-chat:sider-collapsed',
+  pluginSettings: 'deepseek-api-chat:plugin-settings',
 } as const
 
 const read = (key: string) => {
@@ -94,6 +102,32 @@ const initialThemePreference = (): ThemePreference => {
   return saved === 'light' || saved === 'dark' ? saved : 'system'
 }
 
+/** 读取插件状态；结构损坏或字段非法时丢弃该条，避免坏数据影响请求组装 */
+const parsePluginSettings = (): PluginSettings => {
+  try {
+    const parsed: unknown = JSON.parse(read(KEYS.pluginSettings) ?? '{}')
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return {}
+    }
+    const result: PluginSettings = {}
+    for (const [name, value] of Object.entries(parsed)) {
+      if (!value || typeof value !== 'object' || Array.isArray(value)) {
+        continue
+      }
+      const state = value as { enabled?: unknown; config?: unknown }
+      result[name] = {
+        enabled: state.enabled === true,
+        ...(state.config && typeof state.config === 'object' && !Array.isArray(state.config)
+          ? { config: state.config as Record<string, unknown> }
+          : {}),
+      }
+    }
+    return result
+  } catch {
+    return {}
+  }
+}
+
 /** 未保存过时使用服务端默认音色 stella（海星） */
 const initialTtsVoice = (): TtsVoice => (read(KEYS.ttsVoice) === 'tide' ? 'tide' : 'stella')
 
@@ -126,6 +160,7 @@ export const useSettings = create<Settings>(() => ({
   thinkingCollapse: initialThinkingCollapse(),
   search: read(KEYS.search) === 'true',
   siderCollapsed: read(KEYS.siderCollapsed) === 'true',
+  pluginSettings: parsePluginSettings(),
 }))
 
 export const setLocale = (locale: Locale) => {
@@ -186,4 +221,23 @@ export const setSearch = (search: boolean) => {
 export const setSiderCollapsed = (siderCollapsed: boolean) => {
   write(KEYS.siderCollapsed, String(siderCollapsed))
   useSettings.setState({ siderCollapsed })
+}
+export const setPluginEnabled = (name: string, enabled: boolean) => {
+  const current = useSettings.getState().pluginSettings
+  const pluginSettings: PluginSettings = {
+    ...current,
+    [name]: { ...current[name], enabled },
+  }
+  write(KEYS.pluginSettings, JSON.stringify(pluginSettings))
+  useSettings.setState({ pluginSettings })
+}
+
+export const setPluginConfig = (name: string, config: Record<string, unknown>) => {
+  const current = useSettings.getState().pluginSettings
+  const pluginSettings: PluginSettings = {
+    ...current,
+    [name]: { enabled: current[name]?.enabled === true, config },
+  }
+  write(KEYS.pluginSettings, JSON.stringify(pluginSettings))
+  useSettings.setState({ pluginSettings })
 }

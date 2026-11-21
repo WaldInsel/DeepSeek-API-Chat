@@ -15,6 +15,8 @@ export interface PluginContext {
   readonly system: string
   /** 本轮已经组装好的 messages 快照，插件只读，仅用于判断场景 */
   readonly messages: readonly PluginMessage[]
+  /** 宿主注入的插件配置；未配置时为 undefined，插件需自行收窄类型 */
+  readonly config?: unknown
 }
 
 /** messages 的最小可读形状：只要 role 和 content，不依赖 api/types.js */

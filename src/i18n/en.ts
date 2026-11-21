@@ -135,6 +135,17 @@ export const en = {
   settingDialogAsidePluginsOptionLabel: 'Plugins',
   pluginManagementEmptyTitle: 'No plugins yet',
   pluginManagementEmptyDescription: 'Plugins will appear here.',
+  pluginCustomInstructionsLabel: 'Custom instructions',
+  pluginCustomInstructionsDescription:
+    'When enabled, your global instructions are appended to the end of the system prompt on every request.',
+  pluginCustomInstructionsEdit: 'Edit instructions',
+  pluginCustomInstructionsDialogTitle: 'Edit custom instructions',
+  pluginCustomInstructionsPlaceholder:
+    'For example: lead with the conclusion, then explain why.',
+  pluginCustomInstructionsHint: 'Nothing is injected when this is empty.',
+  pluginCustomInstructionsCounter: '{count} / {limit}',
+  pluginToggleOn: 'On',
+  pluginToggleOff: 'Off',
   updateSettingLabel: 'Software version',
   updateCheckButton: 'Check for updates',
   updateDialogTitle: 'Check for updates',

@@ -19,6 +19,8 @@ import { useIsMobile } from '../../app/viewport.js'
 import { useChatStore } from '../../services/chat/store.js'
 import {
   setLocale,
+  setPluginConfig,
+  setPluginEnabled,
   setThemePreference,
   setThinkingCollapse,
   setTtsVoice,
@@ -392,18 +394,116 @@ const errorStatus = (key: TranslationKey, error: unknown): Status => ({
   error: true,
 })
 
-/** 插件管理：插件列表暂时为空，只渲染空状态。 */
+/** 自定义指令的字符上限，只限制 UI 输入 */
+const CUSTOM_INSTRUCTIONS_LIMIT = 4000
+
+/** 编辑自定义指令；保存后写入插件配置，留空则不注入。 */
+const CustomInstructionsDialog = ({
+  open,
+  initialText,
+  onClose,
+}: {
+  open: boolean
+  initialText: string
+  onClose: () => void
+}) => {
+  const t = useTranslate()
+  const { mounted, visible } = usePresence(open)
+  const [text, setText] = useState(initialText)
+  useEffect(() => {
+    if (open) {
+      setText(initialText)
+    }
+  }, [open, initialText])
+  if (!mounted) {
+    return null
+  }
+  return (
+    <Modal
+      title={t('pluginCustomInstructionsDialogTitle')}
+      className={styles.pluginDialog}
+      mainClassName={styles.pluginDialogMain}
+      state={visible ? 'open' : 'closed'}
+      onClose={onClose}
+      footer={
+        <>
+          <Button variant="outlined" size="m" onClick={onClose}>
+            {t('cancel')}
+          </Button>
+          <Button
+            size="m"
+            onClick={() => {
+              setPluginConfig('custom-instructions', {
+                text: text.slice(0, CUSTOM_INSTRUCTIONS_LIMIT).trim(),
+              })
+              onClose()
+            }}
+          >
+            {t('confirm')}
+          </Button>
+        </>
+      }
+    >
+      <textarea
+        className={styles.pluginTextarea}
+        value={text}
+        maxLength={CUSTOM_INSTRUCTIONS_LIMIT}
+        placeholder={t('pluginCustomInstructionsPlaceholder')}
+        autoFocus
+        onChange={(event) => setText(event.target.value)}
+      />
+      <div className={styles.pluginCounter}>
+        {t('pluginCustomInstructionsCounter', {
+          count: text.length,
+          limit: CUSTOM_INSTRUCTIONS_LIMIT,
+        })}
+      </div>
+      <div className={styles.pluginHint}>{t('pluginCustomInstructionsHint')}</div>
+    </Modal>
+  )
+}
+
+/** 插件管理：第一项为自定义指令，开关控制是否进入请求的 system。 */
 const PluginManagement = () => {
   const t = useTranslate()
+  const customInstructions = useSettings((state) => state.pluginSettings['custom-instructions'])
+  const [editorOpen, setEditorOpen] = useState(false)
+  const text =
+    typeof customInstructions?.config?.text === 'string' ? customInstructions.config.text : ''
   return (
     <div className={styles.pluginList}>
-      <div className={styles.pluginEmpty}>
-        <span className={styles.pluginEmptyIcon}>
-          <IconPluginOutline16 />
-        </span>
-        <div className={styles.pluginEmptyTitle}>{t('pluginManagementEmptyTitle')}</div>
-        <div className={styles.pluginEmptyDescription}>{t('pluginManagementEmptyDescription')}</div>
-      </div>
+      <SettingCell
+        label={t('pluginCustomInstructionsLabel')}
+        description={
+          <div className={styles.pluginDescription}>
+            <span>{t('pluginCustomInstructionsDescription')}</span>
+            <button
+              type="button"
+              className={styles.apiGuide}
+              onClick={() => setEditorOpen(true)}
+            >
+              {t('pluginCustomInstructionsEdit')}
+            </button>
+          </div>
+        }
+        status={null}
+        action={
+          <Select
+            ariaLabel={t('pluginCustomInstructionsLabel')}
+            value={customInstructions?.enabled ? 'on' : 'off'}
+            options={[
+              { value: 'on', label: t('pluginToggleOn') },
+              { value: 'off', label: t('pluginToggleOff') },
+            ]}
+            onChange={(value) => setPluginEnabled('custom-instructions', value === 'on')}
+          />
+        }
+      />
+      <CustomInstructionsDialog
+        open={editorOpen}
+        initialText={text}
+        onClose={() => setEditorOpen(false)}
+      />
     </div>
   )
 }

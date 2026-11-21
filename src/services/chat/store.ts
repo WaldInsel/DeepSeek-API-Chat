@@ -1120,13 +1120,14 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
           initial.thinking ?? false,
           latestReminder
         )
-        const thinkingEffort = useSettings.getState().thinkingEffort
+        const settings = useSettings.getState()
+        const thinkingEffort = settings.thinkingEffort
         const events = streamMessage(
-          useSettings.getState().apiKey ?? '',
+          settings.apiKey ?? '',
           {
             model: initial.model ?? currentChatModel(),
-            // 编译期内置插件：把 system 提示词过一遍 src/plugins 注册表（插件出错不影响请求）
-            system: composeSystemPrompt(SYSTEM_PROMPT, messages),
+            // 编译期内置插件：按设置里的开关与配置组装 system（插件出错不影响请求）
+            system: composeSystemPrompt(SYSTEM_PROMPT, messages, settings.pluginSettings),
             messages,
             thinking: { type: initial.thinking ? 'enabled' : 'disabled' },
             ...(initial.thinking

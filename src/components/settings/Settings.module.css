@@ -317,6 +317,22 @@
   .cellButton svg {
     display: none;
   }
+
+  .pluginDialog {
+    width: 100%;
+  }
+
+  .pluginTextarea {
+    min-height: 120px;
+    font-size: 1rem;
+  }
+}
+
+.pluginDescription {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 8px;
 }
 
 .pluginList {
@@ -355,6 +371,57 @@
 }
 
 .pluginEmptyDescription {
+  font-size: 0.75rem;
+  line-height: 18px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.pluginDialog {
+  width: 520px;
+  max-width: calc(100vw - 32px);
+}
+
+.pluginDialogMain {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pluginTextarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 140px;
+  padding: 12px 14px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 16px;
+  background-color: transparent;
+  color: var(--dsw-alias-label-primary);
+  font: inherit;
+  font-size: 0.875rem;
+  line-height: 22px;
+  resize: vertical;
+  outline: none;
+  transition: border-color var(--ds-transition-duration) var(--ds-ease-in-out);
+  caret-color: var(--dsw-alias-brand-text);
+
+  &::placeholder {
+    color: var(--dsw-alias-label-caption);
+  }
+
+  &:focus {
+    border-color: var(--dsw-alias-brand-primary);
+  }
+}
+
+.pluginCounter {
+  align-self: flex-end;
+  font-size: 0.75rem;
+  line-height: 18px;
+  color: var(--dsw-alias-label-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.pluginHint {
   font-size: 0.75rem;
   line-height: 18px;
   color: var(--dsw-alias-label-tertiary);
