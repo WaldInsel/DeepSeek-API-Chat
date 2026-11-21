@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslate } from '../../i18n/index.js'
 import {
   IconPanelLeftOutline16,
@@ -8,7 +8,11 @@ import {
   NewChatIcon,
 } from '../base/icons.js'
 import { setSiderCollapsed } from '../../services/settings.js'
-import { groupSessions, PINNED_GROUP_KEY } from '../../services/chat/sessionGroups.js'
+import {
+  groupSessions,
+  limitSessionGroups,
+  PINNED_GROUP_KEY,
+} from '../../services/chat/sessionGroups.js'
 import { usePinnedSessions } from '../../services/chat/pinned.js'
 import { newChat, removeSession, useChatStore } from '../../services/chat/store.js'
 import type { SessionSummary } from '../../services/chat/types.js'
@@ -24,6 +28,9 @@ import { SessionItem } from './SessionItem.js'
 import { UpdateBadge } from './UpdateBadge.js'
 import styles from './Sider.module.css'
 
+/** 首屏与每次滚动到底补载的会话条数 */
+const PAGE_SIZE = 100
+
 /** 展开的侧边栏：名称与收起按钮、开启新对话、按时间分组的会话列表、底部设置；移动端放在抽屉里，收起按钮关闭抽屉 */
 export const Sider = ({
   mobile = false,
@@ -38,12 +45,24 @@ export const Sider = ({
   const activeId = useChatStore((state) => state.activeId)
   const [now, setNow] = useState(Date.now)
   const pinnedIds = usePinnedSessions((state) => state.ids)
+  const pinnedSet = useMemo(() => new Set(pinnedIds), [pinnedIds])
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  const listRef = useRef<HTMLDivElement>(null)
   const groups = useMemo(
     () => groupSessions(sessions, now, t, pinnedIds),
     [sessions, now, t, pinnedIds]
   )
+  const total = useMemo(
+    () => groups.reduce((count, group) => count + group.sessions.length, 0),
+    [groups]
+  )
+  const visibleGroups = useMemo(
+    () => limitSessionGroups(groups, visibleCount),
+    [groups, visibleCount]
+  )
   const [deleting, setDeleting] = useState<SessionSummary | null>(null)
   const [deletePending, setDeletePending] = useState(false)
+  const onDelete = useCallback((session: SessionSummary) => setDeleting(session), [])
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>
@@ -68,6 +87,25 @@ export const Sider = ({
       window.removeEventListener('focus', refresh)
     }
   }, [])
+
+  // 首屏不足一屏时继续补载，避免滚动条不出现导致无法触发加载。
+  useLayoutEffect(() => {
+    const el = listRef.current
+    if (!el || visibleCount >= total || el.scrollHeight > el.clientHeight) {
+      return
+    }
+    setVisibleCount((value) => Math.min(total, value + PAGE_SIZE))
+  }, [visibleCount, total])
+
+  const loadMore = (event: React.UIEvent<HTMLDivElement>) => {
+    const el = event.currentTarget
+    if (visibleCount >= total) {
+      return
+    }
+    if (el.scrollHeight - el.scrollTop - el.clientHeight <= 120) {
+      setVisibleCount((value) => Math.min(total, value + PAGE_SIZE))
+    }
+  }
 
   return (
     <div
@@ -107,10 +145,15 @@ export const Sider = ({
         {t('newChat')}
       </button>
       <div className={styles.listWrap}>
-        <div className={styles.list} data-sider-scroll="">
-          {groups.map((group, index) => {
+        <div
+          ref={listRef}
+          className={styles.list}
+          data-sider-scroll=""
+          onScroll={loadMore}
+        >
+          {visibleGroups.map((group, index) => {
             // 置顶分组下面还有内容时，在两者的间距中间加一条浅灰分割线
-            const divider = group.key === PINNED_GROUP_KEY && index < groups.length - 1
+            const divider = group.key === PINNED_GROUP_KEY && index < visibleGroups.length - 1
             return (
               <div
                 key={group.key}
@@ -122,8 +165,8 @@ export const Sider = ({
                     key={session.id}
                     session={session}
                     active={session.id === activeId}
-                    pinned={pinnedIds.includes(session.id)}
-                    onDelete={() => setDeleting(session)}
+                    pinned={pinnedSet.has(session.id)}
+                    onDelete={onDelete}
                   />
                 ))}
               </div>

@@ -24,7 +24,7 @@ export const SessionItem = memo(function SessionItem({
   session: SessionSummary
   active: boolean
   pinned: boolean
-  onDelete: () => void
+  onDelete: (session: SessionSummary) => void
 }) {
   const t = useTranslate()
   const [editing, setEditing] = useState(false)
@@ -126,7 +126,7 @@ export const SessionItem = memo(function SessionItem({
               label: t('delete'),
               icon: <IconTrashOutline16 />,
               danger: true,
-              onSelect: onDelete,
+              onSelect: () => onDelete(session),
             },
           ]}
         >

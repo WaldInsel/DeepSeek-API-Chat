@@ -8,6 +8,23 @@ const startOfDay = (time: number) => new Date(time).setHours(0, 0, 0, 0)
 
 export const PINNED_GROUP_KEY = 'sessionHistoryTimelineLabelPinned' as const
 
+export type SessionGroup = { key: string; label: string; sessions: SessionSummary[] }
+
+/** 只保留前 limit 个会话，分组标题随剩余内容保留。 */
+export const limitSessionGroups = (groups: SessionGroup[], limit: number): SessionGroup[] => {
+  let remaining = limit
+  const result: SessionGroup[] = []
+  for (const group of groups) {
+    if (remaining <= 0) {
+      break
+    }
+    const sessions = group.sessions.slice(0, remaining)
+    remaining -= sessions.length
+    result.push({ ...group, sessions })
+  }
+  return result
+}
+
 /** 分组：置顶 / 今天 / 昨天 / 7 天内 / 30 天内 / 按月 */
 export const groupSessions = (
   sessions: SessionSummary[],
@@ -15,7 +32,7 @@ export const groupSessions = (
   t = translate,
   pinnedIds: readonly string[] = []
 ) => {
-  const groups: { key: string; label: string; sessions: SessionSummary[] }[] = []
+  const groups: SessionGroup[] = []
   const byId = new Map(sessions.map((session) => [session.id, session]))
   const pinned = pinnedIds.flatMap((id) => {
     const session = byId.get(id)
