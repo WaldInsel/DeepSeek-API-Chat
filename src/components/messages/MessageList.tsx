@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useIsMobile, useMessageEditing } from '../../app/viewport.js'
+import { useTranslate } from '../../i18n/index.js'
 import {
   buildMessageVersions,
   getVisibleMessages,
@@ -30,6 +31,10 @@ const getUploadRetryId = (messages: Message[], streaming: boolean) => {
 }
 import styles from './MessageList.module.css'
 
+/** 首屏与每次上滑补载的消息条数 */
+const PAGE_SIZE = 25
+/** 停在顶部时展示加载态的时间，留出一帧绘制 */
+const LOADING_DELAY = 120
 /** 距底部小于该值时视为在底部，流式内容增长时跟随 */
 const STICKY_THRESHOLD = 40
 const EMPTY_VERSIONS: MessageVersions = { ids: [], index: -1 }
@@ -44,12 +49,21 @@ export const MessageList = ({
   footer: React.ReactNode
 }) => {
   const isMobile = useIsMobile()
+  const t = useTranslate()
   const scrollRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const stickyRef = useRef(true)
   const scrollTopRef = useRef(0)
   const restoreScrollRef = useRef<{ messageId: string; top: number } | null>(null)
+  const loadAnchorRef = useRef<number | null>(null)
+  const loadingOlderRef = useRef(false)
+  const loadTimerRef = useRef<number | null>(null)
   const messages = getVisibleMessages(session)
+  const [startIndex, setStartIndex] = useState(() =>
+    Math.max(0, messages.length - PAGE_SIZE)
+  )
+  const [loadingOlder, setLoadingOlder] = useState(false)
+  const previousLengthRef = useRef(messages.length)
   const [previousVersions, setPreviousVersions] = useState(() =>
     buildMessageVersions(session, new Map())
   )
@@ -60,6 +74,8 @@ export const MessageList = ({
   if (versions !== previousVersions) {
     setPreviousVersions(versions)
   }
+  const visibleStart = Math.min(startIndex, Math.max(0, messages.length - 1))
+  const visibleMessages = messages.slice(visibleStart)
   const lastMessageId = messages.at(-1)?.id
   const focusMessageId = useHistorySearch((state) =>
     state.focus?.sessionId === session.id ? state.focus.messageId : null
@@ -87,6 +103,50 @@ export const MessageList = ({
     return () => observer.disconnect()
   }, [isMobile, scrollToBottom])
 
+  // 贴底时让窗口跟着末尾走，避免继续聊天把已加载的历史一直堆在 DOM 里。
+  useLayoutEffect(() => {
+    const length = messages.length
+    const previous = previousLengthRef.current
+    previousLengthRef.current = length
+    if (length > previous && stickyRef.current) {
+      setStartIndex((value) => Math.max(0, value + length - previous))
+    }
+  }, [messages.length])
+
+  // 补载后把新增内容的高度加回滚动位置，保持视口内容不跳动。
+  useLayoutEffect(() => {
+    const el = scrollRef.current
+    if (!el) {
+      return
+    }
+    const anchor = loadAnchorRef.current
+    if (anchor !== null) {
+      loadAnchorRef.current = null
+      loadingOlderRef.current = false
+      setLoadingOlder(false)
+      const delta = el.scrollHeight - anchor
+      if (delta > 0) {
+        el.scrollTop += delta
+        scrollTopRef.current = el.scrollTop
+      }
+    }
+    // 消息不足一屏时滚动事件触发不了，主动补到能滚动或没有更早消息为止。
+    if (startIndex > 0 && el.scrollHeight <= el.clientHeight && !loadingOlderRef.current) {
+      loadingOlderRef.current = true
+      loadAnchorRef.current = el.scrollHeight
+      setStartIndex((value) => Math.max(0, value - PAGE_SIZE))
+    }
+  }, [startIndex, messages.length])
+
+  useEffect(
+    () => () => {
+      if (loadTimerRef.current !== null) {
+        window.clearTimeout(loadTimerRef.current)
+      }
+    },
+    []
+  )
+
   // 切换版本后将选择器留在原位置，避免回答长短变化导致操作区跳出视口。
   useLayoutEffect(() => {
     const anchor = restoreScrollRef.current
@@ -105,9 +165,19 @@ export const MessageList = ({
     scrollToBottom()
   }, [session.id, lastMessageId, scrollToBottom])
 
-  // 搜索结果命中后滚到对应消息并居中；找不到（例如分支已切换）就只打开会话
+  // 搜索结果命中后滚到对应消息并居中；命中更早的消息时先把窗口扩到它所在位置。
   useLayoutEffect(() => {
     if (!focusMessageId) {
+      return
+    }
+    const index = messages.findIndex((message) => message.id === focusMessageId)
+    if (index < 0) {
+      clearSearchFocus()
+      return
+    }
+    if (index < visibleStart) {
+      stickyRef.current = false
+      setStartIndex(index)
       return
     }
     const scroll = scrollRef.current
@@ -115,7 +185,6 @@ export const MessageList = ({
       `[data-message-id="${CSS.escape(focusMessageId)}"]`
     )
     if (!scroll || !target) {
-      clearSearchFocus()
       return
     }
     stickyRef.current = false
@@ -123,7 +192,7 @@ export const MessageList = ({
     scroll.scrollTop += top - (scroll.clientHeight - target.clientHeight) / 2
     scrollTopRef.current = scroll.scrollTop
     clearSearchFocus()
-  }, [focusMessageId, session.id, lastMessageId])
+  }, [focusMessageId, session.id, lastMessageId, visibleStart, messages])
 
   useEffect(closeSearchPanel, [session.id, lastMessageId])
 
@@ -160,10 +229,20 @@ export const MessageList = ({
         stickyRef.current = false
       }
       scrollTopRef.current = el.scrollTop
+      // 滑到顶部先显示加载态，再补载更早的一页。
+      if (el.scrollTop <= 1 && startIndex > 0 && !loadingOlderRef.current) {
+        loadingOlderRef.current = true
+        loadAnchorRef.current = el.scrollHeight
+        setLoadingOlder(true)
+        loadTimerRef.current = window.setTimeout(() => {
+          loadTimerRef.current = null
+          setStartIndex((value) => Math.max(0, value - PAGE_SIZE))
+        }, LOADING_DELAY)
+      }
     }
     el.addEventListener('scroll', onScroll, { passive: true })
     return () => el.removeEventListener('scroll', onScroll)
-  }, [isMobile, scrollToBottom])
+  }, [isMobile, scrollToBottom, startIndex])
 
   const lastIndex = messages.length - 1
   const uploadRetryId = getUploadRetryId(messages, streaming)
@@ -176,15 +255,21 @@ export const MessageList = ({
           data-message-scroll=""
         >
           <div ref={contentRef} className={styles.column}>
-            {messages.map((message, index) =>
-              message.role === 'user' ? (
+            {visibleStart > 0 ? (
+              <div className={styles.older} role="status" aria-live="polite">
+                {loadingOlder ? t('loadingOlderMessages') : null}
+              </div>
+            ) : null}
+            {visibleMessages.map((message, index) => {
+              const absoluteIndex = visibleStart + index
+              return message.role === 'user' ? (
                 <UserMessage
                   key={message.id}
                   sessionId={session.id}
                   message={message}
                   retryUploadId={uploadRetryId}
-                  isFirst={index === 0}
-                  isLast={index === lastIndex || index === lastIndex - 1}
+                  isFirst={absoluteIndex === 0}
+                  isLast={absoluteIndex === lastIndex || absoluteIndex === lastIndex - 1}
                   busy={streaming}
                   versions={versions.get(message.id) ?? EMPTY_VERSIONS}
                   onSelectVersion={selectVersion}
@@ -194,14 +279,14 @@ export const MessageList = ({
                   key={message.id}
                   sessionId={session.id}
                   message={message}
-                  isLast={index === lastIndex}
-                  streaming={streaming && index === lastIndex}
+                  isLast={absoluteIndex === lastIndex}
+                  streaming={streaming && absoluteIndex === lastIndex}
                   busy={streaming}
                   versions={versions.get(message.id) ?? EMPTY_VERSIONS}
                   onSelectVersion={selectVersion}
                 />
               )
-            )}
+            })}
           </div>
         </div>
         {footer}
