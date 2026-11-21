@@ -279,7 +279,7 @@ const TtsVoiceSetting = () => {
   )
 }
 
-/** 思考内容：完全折叠只保留标题；部分折叠限制高度并在窗口内滚动；不折叠完整展开。 */
+/** 思考内容：完全折叠只保留标题；部分折叠展开时限高滚动、历史回复默认收起；不折叠完整展开。 */
 const thinkingCollapseOptions: { value: ThinkingCollapse; label: TranslationKey }[] = [
   { value: 'full', label: 'settingsThinkingCollapseFull' },
   { value: 'partial', label: 'settingsThinkingCollapsePartial' },

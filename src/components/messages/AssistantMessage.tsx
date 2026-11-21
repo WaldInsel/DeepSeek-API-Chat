@@ -45,6 +45,7 @@ export const AssistantMessage = memo(function AssistantMessage({
   busy,
   versions,
   onSelectVersion,
+  openedAt,
 }: {
   sessionId: string
   message: AssistantMessageType
@@ -53,6 +54,8 @@ export const AssistantMessage = memo(function AssistantMessage({
   busy: boolean
   versions: MessageVersions
   onSelectVersion: SelectMessageVersion
+  /** 会话打开时间，早于它的消息按历史处理 */
+  openedAt: number
 }) {
   const t = useTranslate()
   const view = useReplyView(message, streaming)
@@ -93,6 +96,7 @@ export const AssistantMessage = memo(function AssistantMessage({
           view={view}
           streaming={streaming}
           hasResponse={!!responseText}
+          isHistory={message.createdAt < openedAt}
         />
       )}
       {answer ? (

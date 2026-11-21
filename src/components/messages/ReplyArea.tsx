@@ -1,6 +1,6 @@
 import { useTranslate } from '../../i18n/index.js'
 import clsx from 'clsx'
-import { memo, useEffect, useRef, useState, type ReactNode } from 'react'
+import { memo, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import {
   IconBrowseOutline16,
   IconBrowseWarningOutline16,
@@ -59,17 +59,24 @@ export const ReplyArea = memo(function ReplyArea({
   view,
   streaming,
   hasResponse,
+  isHistory,
 }: {
   message: AssistantMessage
   view: ReplyView
   streaming: boolean
   hasResponse: boolean
+  /** 会话加载时就存在的消息，思考内容默认收起 */
+  isHistory: boolean
 }) {
   useTranslate()
   const thinkingCollapse = useSettings((state) => state.thinkingCollapse)
-  // 用户点过标题后以手动状态为准；否则完全折叠时默认收起，其他模式默认展开。
+  // 用户点过标题后以手动状态为准。完全折叠始终收起；部分折叠只展开正在生成或本次打开后
+  // 新产生的回复，历史回复默认收起；不折叠始终展开。
   const [manualOpen, setManualOpen] = useState<boolean | null>(null)
-  const open = manualOpen ?? thinkingCollapse !== 'full'
+  const open =
+    manualOpen ??
+    (thinkingCollapse === 'none' ||
+      (thinkingCollapse === 'partial' && (streaming || !isHistory)))
   useEffect(() => setManualOpen(null), [thinkingCollapse])
   const titleActive = streaming && !hasResponse
   useTicker(titleActive, 1000)
@@ -80,6 +87,21 @@ export const ReplyArea = memo(function ReplyArea({
   const thinking = message.thinking ?? view.steps.some((step) => step.type === 'thinking')
   const title = thinking ? getAreaTitle(view, streaming, Date.now(), hasResponse) : null
   const stopped = !streaming && !hasResponse
+  const steps = (
+    <div className={styles.steps}>
+      {view.steps.map((step, index) => (
+        <StepItem
+          key={stepKey(step, index)}
+          step={step}
+          message={message}
+          sources={view.sources}
+          streaming={streaming}
+          isLast={index === view.steps.length - 1}
+          thinkingCollapse={thinkingCollapse}
+        />
+      ))}
+    </div>
+  )
   return (
     <div className={styles.area}>
       {title ? (
@@ -91,24 +113,65 @@ export const ReplyArea = memo(function ReplyArea({
           {open ? <IconChevronDownOutline14 /> : <IconChevronRightOutline14 />}
         </div>
       ) : null}
-      {open || !title ? (
-        <div className={styles.steps}>
-          {view.steps.map((step, index) => (
-            <StepItem
-              key={stepKey(step, index)}
-              step={step}
-              message={message}
-              sources={view.sources}
-              streaming={streaming}
-              isLast={index === view.steps.length - 1}
-              thinkingCollapse={thinkingCollapse}
-            />
-          ))}
-        </div>
-      ) : null}
+      {title ? <Collapse open={open}>{steps}</Collapse> : steps}
     </div>
   )
 })
+
+/** 展开/收起过渡：展开时先挂载再动画，收起结束后卸载内容，折叠状态不保留思考 DOM。 */
+const Collapse = ({ open, children }: { open: boolean; children: ReactNode }) => {
+  const [mounted, setMounted] = useState(open)
+  const [expanded, setExpanded] = useState(open)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useLayoutEffect(() => {
+    let frame = 0
+    if (open) {
+      setMounted(true)
+      // 先以收起状态插入，下一帧再展开，才能触发高度过渡。
+      frame = requestAnimationFrame(() => setExpanded(true))
+    } else {
+      setExpanded(false)
+    }
+    return () => {
+      if (frame) {
+        cancelAnimationFrame(frame)
+      }
+    }
+  }, [open])
+
+  useEffect(() => {
+    const el = ref.current
+    if (open || !mounted || !el) {
+      return
+    }
+    // 收起动画结束后再卸载；没有过渡时用定时器兜底。
+    const done = (event: TransitionEvent) => {
+      if (event.target === el && event.propertyName === 'grid-template-rows') {
+        setMounted(false)
+      }
+    }
+    el.addEventListener('transitionend', done)
+    const fallback = window.setTimeout(() => setMounted(false), 320)
+    return () => {
+      el.removeEventListener('transitionend', done)
+      window.clearTimeout(fallback)
+    }
+  }, [open, mounted])
+
+  if (!mounted) {
+    return null
+  }
+  return (
+    <div
+      ref={ref}
+      className={clsx(styles.collapse, expanded && styles.collapseOpen)}
+      aria-hidden={!open || undefined}
+    >
+      <div className={styles.collapseInner}>{children}</div>
+    </div>
+  )
+}
 
 const stepKey = (step: Step, index: number) =>
   step.type === 'thinking' || step.type === 'text' || step.type === 'search'

@@ -58,6 +58,8 @@ export const MessageList = ({
   const loadAnchorRef = useRef<number | null>(null)
   const loadingOlderRef = useRef(false)
   const loadTimerRef = useRef<number | null>(null)
+  // 会话打开时间：之后新生成的消息展开思考，之前加载的历史消息默认收起。
+  const openedAtRef = useRef(Date.now())
   const messages = getVisibleMessages(session)
   const [startIndex, setStartIndex] = useState(() =>
     Math.max(0, messages.length - PAGE_SIZE)
@@ -284,6 +286,7 @@ export const MessageList = ({
                   busy={streaming}
                   versions={versions.get(message.id) ?? EMPTY_VERSIONS}
                   onSelectVersion={selectVersion}
+                  openedAt={openedAtRef.current}
                 />
               )
             })}

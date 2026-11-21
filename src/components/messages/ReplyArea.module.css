@@ -333,3 +333,22 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* 思考内容展开/收起：用 grid 行高过渡，收起动画结束后由组件卸载内容 */
+.collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 0.24s ease,
+    opacity 0.2s ease;
+}
+
+.collapseOpen {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.collapseInner {
+  min-height: 0;
+  overflow: hidden;
+}
