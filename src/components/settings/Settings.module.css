@@ -295,6 +295,29 @@
     min-height: 44px;
   }
 
+  .apiKey {
+    padding-bottom: 0;
+  }
+
+  .apiKeySaved,
+  .apiKeyInput {
+    height: 52px;
+    padding: 0 12px 0 16px;
+    border: none;
+    border-radius: 40px;
+    background-color: var(--dsw-specific-login-input);
+    font-size: 1rem;
+  }
+
+  .apiKeySaved svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .cellButton svg {
+    display: none;
+  }
+}
 
 .importProgress {
   display: flex;
@@ -338,30 +361,6 @@
 
   to {
     transform: translateX(250%);
-  }
-}
-
-.apiKey {
-    padding-bottom: 0;
-  }
-
-  .apiKeySaved,
-  .apiKeyInput {
-    height: 52px;
-    padding: 0 12px 0 16px;
-    border: none;
-    border-radius: 40px;
-    background-color: var(--dsw-specific-login-input);
-    font-size: 1rem;
-  }
-
-  .apiKeySaved svg {
-    width: 20px;
-    height: 20px;
-  }
-
-  .cellButton svg {
-    display: none;
   }
 }
 

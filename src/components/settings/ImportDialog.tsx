@@ -91,9 +91,14 @@ export const ImportDialog = ({
       state={visible ? 'open' : 'closed'}
       onClose={onClose}
       footer={
-        <Button variant="outlined" size="m" onClick={onClose}>
-          {t('close')}
-        </Button>
+        <div className={styles.footer}>
+          {archiveProgress || linkBusy ? (
+            <span className={styles.footerHint}>{t('historyImportKeepForeground')}</span>
+          ) : null}
+          <Button variant="outlined" size="m" className={styles.footerAction} onClick={onClose}>
+            {t('close')}
+          </Button>
+        </div>
       }
     >
       <div className={styles.body}>

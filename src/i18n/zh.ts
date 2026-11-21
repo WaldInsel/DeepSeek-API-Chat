@@ -171,6 +171,7 @@ export const zh = {
   historyImportDescription: '导入历史对话会覆盖全部本地对话和附件，支持 DeepSeek 导出的 ZIP 文件。',
   historyImportProgress: '正在导入 {progress}%',
   historyImportParsing: '正在解析文件…',
+  historyImportKeepForeground: '解析和导入时请保持应用位于前台',
   historyImportedOne: '已导入 1 个对话',
   historyImported: '已导入 {count} 个对话',
   historyImportFailed:
