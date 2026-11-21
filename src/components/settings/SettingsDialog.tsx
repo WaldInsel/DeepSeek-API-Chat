@@ -123,6 +123,7 @@ const SettingsContent = ({ state }: { state: 'open' | 'closed' }) => {
                 progress={historyImportProgress}
                 onOpen={() => setImportOpen(true)}
               />
+
               <ExportHistory disabled={historyBusy} />
               <SettingCell
                 label={t('deleteAllSessions')}
@@ -463,9 +464,9 @@ const ImportHistory = ({
 
   return (
     <SettingCell
-      label={t('historyImport')}
+      label={t('importEntry')}
       description={
-        progress === null ? t('historyImportDescription') : <ImportProgress progress={progress} />
+        progress === null ? t('importEntryDescription') : <ImportProgress progress={progress} />
       }
       status={historyImport.status}
       action={
@@ -477,12 +478,13 @@ const ImportHistory = ({
           onClick={onOpen}
         >
           <IconUploadOutline14 />
-          {t('upload')}
+          {t('importHistoryAction')}
         </Button>
       }
     />
   )
 }
+
 
 /** 读取 Blob 为 base64（Capacitor 的 Filesystem 只接受 base64 字符串） */
 const blobToBase64 = (blob: Blob) =>

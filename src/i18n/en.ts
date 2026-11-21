@@ -184,11 +184,13 @@ export const en = {
   historyImported: 'Imported {count} chats',
   historyImportFailed:
     'File import failed. The file format may be invalid, or the ZIP file may use an older chat export format. Please export your chat history from DeepSeek again and retry the import.',
+  importEntry: 'Import history and shared chats',
+  importEntryDescription: 'Import a DeepSeek history export, or a chat someone shared with you.',
   importDialogTitle: 'Import chats',
-  importChooseArchive: 'Choose ZIP file',
-  shareImportTitle: 'Import from share link',
+  importHistoryAction: 'Import',
+  shareImportTitle: 'Import shared chat',
   shareImportDescription:
-    'Paste a DeepSeek share link. The chat will be added to your list without replacing existing chats.',
+    'Import a DeepSeek chat shared by someone else. It is added to your chat list.',
   shareImportPlaceholder: 'https://chat.deepseek.com/share/...',
   shareImportAction: 'Import',
   shareImportBusy: 'Importing…',

@@ -13,6 +13,7 @@ import { showToast } from '../base/toastState.js'
 import { usePresence } from '../base/usePresence.js'
 import type { HistoryImportProgress } from './historyImportState.js'
 import { ImportProgress } from './ImportProgress.js'
+import settingsStyles from './Settings.module.css'
 import styles from './ImportDialog.module.css'
 
 type Status = (TranslationMessage & { error?: boolean; reason?: TranslationKey }) | null
@@ -97,22 +98,25 @@ export const ImportDialog = ({
     >
       <div className={styles.body}>
         <section className={styles.section}>
-          <div className={styles.sectionTitle}>{t('historyImport')}</div>
-          <p className={styles.hint}>{t('historyImportDescription')}</p>
-          {archiveProgress ? (
-            <ImportProgress progress={archiveProgress} />
-          ) : (
-            <Button
-              variant="outlined"
-              size="m"
-              className={styles.archiveButton}
-              disabled={disabled || archiveBusy}
-              onClick={() => inputRef.current?.click()}
-            >
-              <IconUploadOutline14 />
-              {t('importChooseArchive')}
-            </Button>
-          )}
+          <div className={clsx(settingsStyles.cell, settingsStyles.row)}>
+            <div className={settingsStyles.text}>
+              <div className={settingsStyles.label}>{t('historyImport')}</div>
+              <div className={settingsStyles.description}>{t('historyImportDescription')}</div>
+            </div>
+            {archiveProgress ? null : (
+              <Button
+                variant="outlined"
+                size="m"
+                className={clsx(settingsStyles.cellButton, settingsStyles.uploadButton)}
+                disabled={disabled || archiveBusy}
+                onClick={() => inputRef.current?.click()}
+              >
+                <IconUploadOutline14 />
+                {t('importHistoryAction')}
+              </Button>
+            )}
+          </div>
+          {archiveProgress ? <ImportProgress progress={archiveProgress} /> : null}
           <input
             ref={inputRef}
             type="file"
@@ -137,8 +141,8 @@ export const ImportDialog = ({
         </section>
 
         <section className={styles.section}>
-          <div className={styles.sectionTitle}>{t('shareImportTitle')}</div>
-          <p className={styles.hint}>{t('shareImportDescription')}</p>
+          <div className={settingsStyles.label}>{t('shareImportTitle')}</div>
+          <div className={settingsStyles.description}>{t('shareImportDescription')}</div>
           <div className={styles.linkRow}>
             <input
               className={styles.input}
@@ -160,6 +164,7 @@ export const ImportDialog = ({
             <Button
               variant="primary"
               size="m"
+              className={clsx(settingsStyles.cellButton, settingsStyles.uploadButton)}
               disabled={webUnsupported || disabled || linkBusy || !link.trim()}
               onClick={() => void submit()}
             >
