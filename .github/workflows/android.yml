@@ -8,10 +8,6 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: android-${{ github.ref }}-${{ matrix.variant }}
-  cancel-in-progress: true
-
 jobs:
   build:
     strategy:
@@ -19,6 +15,9 @@ jobs:
       matrix:
         # standard：常规前端目标；legacy：面向 Android 9 旧版系统 WebView 的低内核产物
         variant: [standard, legacy]
+    concurrency:
+      group: android-${{ github.ref }}-${{ matrix.variant }}
+      cancel-in-progress: true
     runs-on: ubuntu-24.04
     timeout-minutes: 40
     env:
