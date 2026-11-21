@@ -1,0 +1,66 @@
+name: Build macOS app
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: macos-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: Cache Rust artifacts
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build universal dmg
+        uses: tauri-apps/tauri-action@v0
+        with:
+          args: --target universal-apple-darwin --bundles dmg
+
+      - name: Collect dmg
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          shopt -s nullglob
+          for file in src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg; do
+            cp "$file" artifacts/
+          done
+          ls -l artifacts
+
+      - name: Upload dmg
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-dmg
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 14
