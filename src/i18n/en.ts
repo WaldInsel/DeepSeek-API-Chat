@@ -137,7 +137,7 @@ export const en = {
   pluginManagementEmptyDescription: 'Plugins will appear here.',
   pluginCustomInstructionsLabel: 'Custom instructions',
   pluginCustomInstructionsDescription:
-    'When enabled, your global instructions are appended to the end of the system prompt on every request.',
+    'When enabled, your global instructions are appended to the end of the System prompt on every request, and DeepSeek follows them when carrying out the task.',
   pluginCustomInstructionsPlaceholder:
     'For example: lead with the conclusion, then explain why.',
   pluginCustomInstructionsHint: 'Nothing is injected when this is empty.',
@@ -148,10 +148,10 @@ export const en = {
   pluginPromptHintBuiltin: 'Leave empty to use the built-in text.',
   pluginNsfwLabel: 'NSFW fiction mode',
   pluginNsfwDescription:
-    'When enabled, an 18+ fiction preamble is prepended to the system prompt on every request; character and scene setup take priority over generic assistant rules.',
-  pluginPurgeLabel: 'Refusal fallback (Purge)',
+    'When enabled, an 18+ fiction preamble is injected at the front of the System prompt on every request; character and scene setup take priority over generic assistant rules.',
+  pluginPurgeLabel: 'Refusal fallback mode',
   pluginPurgeDescription:
-    'When enabled, fallback rules are appended to the end of the system prompt to suppress first-turn hedging, disclaimers, and softer rewrites.',
+    'When enabled, fallback rules are appended to the end of the System prompt, suppressing first-turn hedging, disclaimers, and self-softening.',
 
   pluginSectionBuiltin: 'Built-in plugins',
   pluginSectionCommunity: 'Unofficial plugins',

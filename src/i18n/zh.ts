@@ -131,7 +131,7 @@ export const zh = {
   pluginManagementEmptyTitle: '暂无插件',
   pluginManagementEmptyDescription: '插件会显示在这里。',
   pluginCustomInstructionsLabel: '自定义指令',
-  pluginCustomInstructionsDescription: '开启后，在每次请求的 system 末尾追加你写的全局指令。',
+  pluginCustomInstructionsDescription: '开启后，在每次请求的 System 末尾追加你的全局指令，DeepSeek 会根据你的指令执行对应任务。',
   pluginCustomInstructionsPlaceholder: '例如：回答时先给结论，再解释原因。',
   pluginCustomInstructionsHint: '留空时不会注入任何内容。',
   pluginCustomInstructionsCounter: '{count} / {limit}',
@@ -141,10 +141,10 @@ export const zh = {
   pluginPromptHintBuiltin: '留空时使用插件内置正文。',
   pluginNsfwLabel: 'NSFW 创作模式',
   pluginNsfwDescription:
-    '开启后，在每次请求的 system 最前面注入 18+ 虚构创作总纲；角色与场景设定优先于通用助手规范。',
-  pluginPurgeLabel: '拒答兜底（Purge）',
+    '开启后，在每次请求的 System 最前面注入 18+ 虚构创作总纲，角色与场景设定优先于通用助手规范。',
+  pluginPurgeLabel: '拒答兜底模式',
   pluginPurgeDescription:
-    '开启后，在每次请求的 system 末尾追加兜底规则，压掉首轮的推脱、免责声明与自我弱化。',
+    '开启后，在每次请求的 System 末尾追加兜底规则，可以压掉首轮的推脱、免责声明与自我弱化。',
 
   pluginSectionBuiltin: '内置插件',
   pluginSectionCommunity: '非官方插件',
