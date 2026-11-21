@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import {
   IconDataOutline16,
   IconDownloadOutline16,
@@ -13,6 +13,7 @@ import {
   importHistory,
 } from '../../services/chat/backup.js'
 import { isCapacitor, isTauri } from '../../app/platform.js'
+import { pushBackHandler } from '../../app/backStack.js'
 import { useIsMobile } from '../../app/viewport.js'
 import { useChatStore } from '../../services/chat/store.js'
 import {
@@ -37,6 +38,8 @@ import {
   type HistoryImportProgress,
 } from './historyImportState.js'
 import { closeSettings, useSettingsDialog, type SettingsSection } from './settingsDialogState.js'
+import { ImportDialog } from './ImportDialog.js'
+import { ImportProgress } from './ImportProgress.js'
 import { UpdateCheck } from './UpdateCheck.js'
 import styles from './Settings.module.css'
 
@@ -65,10 +68,12 @@ const SettingsContent = ({ state }: { state: 'open' | 'closed' }) => {
   const isMobile = useIsMobile()
   // 打开时按调用方指定的分组选中，之后在弹窗内切换
   const [section, setSection] = useState(() => useSettingsDialog.getState().section)
+  const [importOpen, setImportOpen] = useState(false)
   // 切换分组不丢失正在输入的 API Key 与导入状态
   const apiKeyEditor = useApiKeyEditor()
   const historyImport = useHistoryImport()
   const historyDelete = useHistoryDelete()
+  const historyImportProgress = useHistoryImportProgress((state) => state.progress)
   const replacingHistory = useChatStore((state) => state.importingHistory)
   const historyBusy = historyImport.busy || historyDelete.busy || replacingHistory
   return (
@@ -112,7 +117,12 @@ const SettingsContent = ({ state }: { state: 'open' | 'closed' }) => {
           ) : (
             <>
               <ApiKeyField editor={apiKeyEditor} />
-              <ImportHistory historyImport={historyImport} disabled={historyBusy} />
+              <ImportHistory
+                historyImport={historyImport}
+                disabled={historyBusy}
+                progress={historyImportProgress}
+                onOpen={() => setImportOpen(true)}
+              />
               <ExportHistory disabled={historyBusy} />
               <SettingCell
                 label={t('deleteAllSessions')}
@@ -134,6 +144,15 @@ const SettingsContent = ({ state }: { state: 'open' | 'closed' }) => {
           )}
         </div>
       </Modal>
+      <ImportDialog
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        disabled={historyBusy}
+        archiveBusy={historyImport.busy}
+        archiveProgress={historyImportProgress}
+        archiveStatus={historyImport.status}
+        onSelectArchive={historyImport.select}
+      />
       {historyImport.file ? <ImportConfirm historyImport={historyImport} /> : null}
       {historyDelete.opened ? <DeleteAllConfirm historyDelete={historyDelete} /> : null}
     </>
@@ -295,6 +314,10 @@ const ImportConfirm = ({
   historyImport: ReturnType<typeof useHistoryImport>
 }) => {
   const t = useTranslate()
+  const cancelRef = useRef(historyImport.cancel)
+  cancelRef.current = historyImport.cancel
+  // 返回键先关确认弹窗，再关下面的导入弹窗
+  useEffect(() => pushBackHandler(() => cancelRef.current()), [])
   return (
     <Modal
       title={t('historyImportConfirmTitle')}
@@ -424,47 +447,19 @@ const useHistoryImport = () => {
   return { file, busy, status, select: setFile, cancel: () => setFile(null), confirm }
 }
 
-/** 导入进度：解析阶段显示不确定条，写入阶段显示百分比；关掉设置再打开也能恢复。 */
-const ImportProgress = ({ progress }: { progress: HistoryImportProgress }) => {
-  const t = useTranslate()
-  const parsing = progress.phase === 'parsing'
-  const label = parsing
-    ? t('historyImportParsing')
-    : t('historyImportProgress', { progress: progress.percent })
-  return (
-    <div
-      className={styles.importProgress}
-      role="progressbar"
-      aria-label={label}
-      aria-valuemin={0}
-      aria-valuemax={100}
-      aria-valuenow={parsing ? undefined : progress.percent}
-    >
-      <span className={styles.importProgressTrack}>
-        <span
-          className={clsx(
-            styles.importProgressFill,
-            parsing && styles.importProgressIndeterminate
-          )}
-          style={parsing ? undefined : { width: `${progress.percent}%` }}
-        />
-      </span>
-      <span className={styles.importProgressText}>{label}</span>
-    </div>
-  )
-}
-
-/** 导入 = 覆盖：用选中文件替换本地全部会话与附件。 */
+/** 导入入口：打开导入弹窗；ZIP 仍是覆盖式导入。 */
 const ImportHistory = ({
   historyImport,
   disabled,
+  progress,
+  onOpen,
 }: {
   historyImport: ReturnType<typeof useHistoryImport>
   disabled: boolean
+  progress: HistoryImportProgress | null
+  onOpen: () => void
 }) => {
   const t = useTranslate()
-  const inputRef = useRef<HTMLInputElement>(null)
-  const progress = useHistoryImportProgress((state) => state.progress)
 
   return (
     <SettingCell
@@ -474,31 +469,16 @@ const ImportHistory = ({
       }
       status={historyImport.status}
       action={
-        <>
-          <Button
-            variant="outlined"
-            size="m"
-            className={clsx(styles.cellButton, styles.uploadButton)}
-            disabled={disabled}
-            onClick={() => inputRef.current?.click()}
-          >
-            <IconUploadOutline14 />
-            {t('upload')}
-          </Button>
-          <input
-            ref={inputRef}
-            type="file"
-            accept=".zip,application/zip,application/x-zip-compressed"
-            hidden
-            onChange={(event) => {
-              const file = event.target.files?.[0]
-              event.target.value = ''
-              if (file) {
-                historyImport.select(file)
-              }
-            }}
-          />
-        </>
+        <Button
+          variant="outlined"
+          size="m"
+          className={clsx(styles.cellButton, styles.uploadButton)}
+          disabled={disabled}
+          onClick={onOpen}
+        >
+          <IconUploadOutline14 />
+          {t('upload')}
+        </Button>
       }
     />
   )

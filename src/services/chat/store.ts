@@ -500,6 +500,32 @@ export const selectSession = (id: string) => {
 }
 
 /**
+ * 追加一条从分享链接解析出的会话：先落盘再进列表，不影响已有记录。
+ * 与 replaceHistory 不同，这里不做全量替换，也不锁定其他会话。
+ */
+export const importSharedSession = async (session: Session): Promise<void> => {
+  if (get().importingHistory) {
+    throw new Error('History import is already in progress')
+  }
+  try {
+    await db.saveSession(session)
+  } catch (error) {
+    db.reportStorageError('import shared session')(error)
+    throw error
+  }
+  touchSession(session.id)
+  set((state) => ({
+    sessions: sortSessions([toSessionSummary(session), ...state.sessions]),
+    sessionCache: { ...state.sessionCache, [session.id]: session },
+    activeId: session.id,
+  }))
+  void import('./search.js')
+    .then(({ registerSession }) => registerSession(session))
+    .catch(() => undefined)
+  trimSessionCache()
+}
+
+/**
  * 从当前会话的某条消息处复制出新会话：只保留可见路径到该消息为止，
  * 消息重新编号后独立演进；标题沿用源标题并追加分支后缀。
  */
