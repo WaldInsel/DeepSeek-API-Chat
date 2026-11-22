@@ -1,4 +1,4 @@
-import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { appendFileSync, copyFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
 
 const plistPath = 'ios/App/App/Info.plist'
 
@@ -43,4 +43,40 @@ if (existsSync(plistPath)) {
       `IOS_SHORT_VERSION=${shortVersion}\nIOS_BUILD_VERSION=${buildVersion}\n`
     )
   }
+}
+
+const appIconSource = 'assets/icon-ios.png'
+const appIconDir = 'ios/App/App/Assets.xcassets/AppIcon.appiconset'
+
+if (existsSync(appIconDir)) {
+  if (!existsSync(appIconSource)) {
+    throw new Error(`iOS app icon source not found: ${appIconSource}`)
+  }
+
+  copyFileSync(appIconSource, `${appIconDir}/AppIcon-512@2x.png`)
+
+  const contentsPath = `${appIconDir}/Contents.json`
+
+  if (!existsSync(contentsPath)) {
+    writeFileSync(
+      contentsPath,
+      `${JSON.stringify(
+        {
+          images: [
+            {
+              filename: 'AppIcon-512@2x.png',
+              idiom: 'universal',
+              platform: 'ios',
+              size: '1024x1024',
+            },
+          ],
+          info: { author: 'xcode', version: 1 },
+        },
+        null,
+        2
+      )}\n`
+    )
+  }
+} else if (existsSync('ios')) {
+  throw new Error(`iOS app icon set not found: ${appIconDir}`)
 }
