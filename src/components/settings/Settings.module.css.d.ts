@@ -7,6 +7,7 @@ declare const styles: {
   readonly "content": string;
   readonly "cell": string;
   readonly "row": string;
+  readonly "cellActions": string;
   readonly "text": string;
   readonly "label": string;
   readonly "apiKeyHeader": string;

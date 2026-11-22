@@ -49,6 +49,7 @@ export const Modal = ({
   mainClassName,
   state = 'open',
   pullDownToClose = false,
+  dismissible = true,
   onClose,
 }: {
   title: ReactNode
@@ -63,6 +64,8 @@ export const Modal = ({
   state?: 'open' | 'closed'
   /** 移动端在弹窗顶部显示可下拉关闭的小白条 */
   pullDownToClose?: boolean
+  /** 是否允许点遮罩或按 Esc 关闭；为 false 时只能点标题栏的关闭按钮 */
+  dismissible?: boolean
   onClose: () => void
 }) => {
   const t = useTranslate()
@@ -72,11 +75,13 @@ export const Modal = ({
   const pullRef = useRef<PullState | null>(null)
   const onCloseRef = useRef(onClose)
   onCloseRef.current = onClose
+  const dismissibleRef = useRef(dismissible)
+  dismissibleRef.current = dismissible
   useEffect(() => {
     const token = {}
     openModals.push(token)
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && openModals.at(-1) === token) {
+      if (event.key === 'Escape' && openModals.at(-1) === token && dismissibleRef.current) {
         onCloseRef.current()
       }
     }
@@ -183,7 +188,9 @@ export const Modal = ({
     <div
       className={styles.overlay}
       data-state={state}
-      onMouseDown={(event) => event.target === event.currentTarget && onClose()}
+      onMouseDown={(event) =>
+        dismissible && event.target === event.currentTarget && onClose()
+      }
     >
       <div
         ref={contentRef}

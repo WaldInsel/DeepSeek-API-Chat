@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { isCapacitor, isTauri } from '../app/platform.js'
 import { openExternal } from '../app/systemBars.js'
 
-const REPOSITORY = 'ckckh2023/DeepSeek-API-Chat'
+export const REPOSITORY = 'ckckh2023/DeepSeek-API-Chat'
 export const RELEASES_URL = `https://github.com/${REPOSITORY}/releases/latest`
 export const GITEE_RELEASES_URL = `https://gitee.com/${REPOSITORY}/releases/latest`
 export const BAIDU_PAN_URL = 'https://pan.baidu.com/s/1v_7pM502Ek31azc4Zv1uYw?pwd=3141'

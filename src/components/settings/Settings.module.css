@@ -90,6 +90,13 @@
   gap: 8px;
 }
 
+/* 设置项右侧并排的多个操作按钮 */
+.cellActions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
 .text {
   display: flex;
   flex: 1 0 0;

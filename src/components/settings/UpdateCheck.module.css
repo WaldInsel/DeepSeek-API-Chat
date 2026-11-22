@@ -3,6 +3,79 @@
   flex-direction: column;
 }
 
+.about {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.aboutName {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 24px;
+  font-weight: var(--fw-semibold);
+  color: var(--dsw-alias-label-primary);
+}
+
+.aboutText {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 20px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.aboutMeta {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 18px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+/* 开源仓库分区：分割线 + 小标题 */
+.aboutDivider {
+  height: 1px;
+  margin: 4px 0;
+  background-color: var(--dsw-alias-border-l2-darkmode-thin);
+}
+
+.aboutSectionTitle {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 18px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+/* 弹窗底栏：左侧非官方声明，右侧关闭按钮 */
+.aboutFooter {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 12px;
+}
+
+.aboutNote {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.75rem;
+  line-height: 18px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+/* 版本号保持普通文字外观，只作为进入高级模式的隐藏入口 */
+.version {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-size: 0.75rem;
+  line-height: 18px;
+  color: var(--dsw-alias-label-tertiary);
+  text-align: left;
+  cursor: default;
+  -webkit-tap-highlight-color: transparent;
+}
+
 .status,
 .statusTitle {
   margin: 0 0 8px;
@@ -19,6 +92,18 @@
   color: var(--dsw-alias-label-secondary);
 }
 
+/* 高级模式风险提示正文 */
+.noticeText {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 20px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.noticeStrong {
+  font-weight: var(--fw-semibold);
+}
+
 .current {
   margin: 0 0 16px;
   font-size: 0.75rem;
@@ -31,6 +116,21 @@
   font-size: 0.75rem;
   line-height: 18px;
   color: var(--dsw-alias-label-tertiary);
+}
+
+/* 反馈群入口：左侧群名，右侧加入按钮 */
+.groupRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.groupLabel {
+  min-width: 0;
+  font-size: 0.8125rem;
+  line-height: 20px;
+  color: var(--dsw-alias-label-primary);
 }
 
 .channels {
