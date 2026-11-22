@@ -17,6 +17,8 @@
     "cap:add:android": "cap add android",
     "cap:sync": "cap sync",
     "type": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "lint": "oxlint src rspack.config.ts",
     "format": "oxfmt --write ."
   },
@@ -61,6 +63,7 @@
     "@types/react-dom": "~18.3.0",
     "oxfmt": "0.48.0",
     "oxlint": "1.63.0",
-    "typescript": "7.0.2"
+    "typescript": "7.0.2",
+    "vitest": "^5.1.1"
   }
 }
