@@ -93,10 +93,7 @@
   width: 56px;
   height: 3px;
   border-radius: 999px;
-  background-color: var(--dsw-static-neutral-bluish-00);
-  box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.06),
-    0 1px 2px rgba(0, 0, 0, 0.16);
+  background-color: var(--dsw-alias-border-l3);
 }
 
 .header {

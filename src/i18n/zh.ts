@@ -174,7 +174,7 @@ export const zh = {
   advancedModeJoinNow: '立即跳转',
   aboutUs: '关于我们',
   aboutDescription:
-    '基于 DeepSeek API 的第三方聊天客户端，网页、桌面与 Android 共用一套前端代码，无需自建后端。',
+    '基于 DeepSeek API 和 Chat Demo 制作的 DeepSeek API 聊天软件，献给喜欢简单的每一个人。',
   aboutNonOfficial: '非 DeepSeek 官方产品，与 DeepSeek 官方无隶属关系。',
   aboutOpenSource: '开源代码可供审查',
   aboutRepositoryGithub: 'GitHub 仓库',
