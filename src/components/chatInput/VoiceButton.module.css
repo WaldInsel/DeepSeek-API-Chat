@@ -63,7 +63,7 @@
 
 .halo {
   position: absolute;
-  top: 0; right: 0; bottom: 0; left: 0;
+  inset: 0;
   border-radius: 50%;
   background-color: var(--dsw-alias-brand-primary);
   opacity: 0.2;
@@ -74,7 +74,7 @@
 
 .core {
   position: absolute;
-  top: 2px; right: 2px; bottom: 2px; left: 2px;
+  inset: 2px;
   border-radius: 50%;
   background-color: var(--dsw-alias-brand-primary);
   opacity: 0.75;

@@ -8,18 +8,14 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
-    strategy:
-      fail-fast: false
-      matrix:
-        # standard：常规前端目标；legacy：面向 Android 9 旧版系统 WebView 的低内核产物
-        variant: [standard, legacy]
-    concurrency:
-      group: android-${{ github.ref }}-${{ matrix.variant }}
-      cancel-in-progress: true
     runs-on: ubuntu-24.04
-    timeout-minutes: 40
+    timeout-minutes: 30
     env:
       # 发布签名材料；四个 secret 都配好才会生成签名包，否则 release 包保持未签名
       ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -49,12 +45,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build web assets
-        if: matrix.variant == 'standard'
         run: pnpm build
-
-      - name: Build legacy web assets
-        if: matrix.variant == 'legacy'
-        run: pnpm build:legacy
 
       - name: Add Android platform
         run: pnpm exec cap add android
@@ -77,18 +68,11 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug assembleRelease --no-daemon
 
-      - name: Collect APKs
-        run: |
-          mkdir -p artifacts
-          cp android/app/build/outputs/apk/debug/app-debug.apk "artifacts/app-${{ matrix.variant }}-debug.apk"
-          for file in android/app/build/outputs/apk/release/*.apk; do
-            cp "$file" "artifacts/app-${{ matrix.variant }}-$(basename "$file")"
-          done
-          ls -l artifacts
-
       - name: Upload APKs
         uses: actions/upload-artifact@v4
         with:
-          name: android-apk-${{ matrix.variant }}
-          path: artifacts/
+          name: android-apk
+          path: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+            android/app/build/outputs/apk/release/*.apk
           retention-days: 14

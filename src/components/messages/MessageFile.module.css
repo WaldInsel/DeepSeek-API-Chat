@@ -47,7 +47,7 @@ button.image {
 
 .overlay {
   position: absolute;
-  top: 0; right: 0; bottom: 0; left: 0;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -79,7 +79,6 @@ button.image {
   align-items: flex-end;
   justify-content: center;
   box-sizing: border-box;
-  min-height: 60px;
   min-height: min(60px, 100%);
   padding: 0 4px 8px;
   font-size: 0.6875rem;

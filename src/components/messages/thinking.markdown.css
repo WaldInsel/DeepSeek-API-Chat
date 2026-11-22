@@ -54,17 +54,22 @@
   h6 + ol {
     margin-top: 4px;
   }
-  h3.ds-heading-before-list,
-  h4.ds-heading-before-list,
-  h5.ds-heading-before-list,
-  h6.ds-heading-before-list {
+  h3:has(+ ul),
+  h4:has(+ ul),
+  h5:has(+ ul),
+  h6:has(+ ul),
+  h3:has(+ ol),
+  h4:has(+ ol),
+  h5:has(+ ol),
+  h6:has(+ ol) {
     margin-bottom: 4px;
   }
   .ds-markdown-paragraph + ul,
   .ds-markdown-paragraph + ol {
     margin-top: 4px;
   }
-  .ds-markdown-paragraph-before-list {
+  .ds-markdown-paragraph:has(+ ol),
+  .ds-markdown-paragraph:has(+ ol) {
     margin-bottom: 4px;
   }
 

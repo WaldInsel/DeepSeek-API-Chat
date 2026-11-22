@@ -38,7 +38,7 @@ The output is written to `dist/`. Deploy it to a static web server or open `dist
 Builds run in GitHub Actions:
 
 - [desktop.yml](.github/workflows/desktop.yml): Windows (NSIS) and Linux installers.
-- [android.yml](.github/workflows/android.yml): debug and release APKs; release APKs are signed when the four signing secrets are configured. It produces both `standard` and `legacy` variants, and `legacy` targets Android 9 and other older system WebViews.
+- [android.yml](.github/workflows/android.yml): debug and release APKs; release APKs are signed when the four signing secrets are configured.
 
 ## Data and storage
 
@@ -52,7 +52,6 @@ History import and export in Settings use ZIP archives. After confirmation and s
 | ------------- | ---------------------------- |
 | `pnpm dev`    | Start the development server |
 | `pnpm build`  | Build into `dist/`           |
-| `pnpm build:legacy` | Build for legacy WebViews |
 | `pnpm type`   | Run TypeScript type checks   |
 | `pnpm lint`   | Lint with oxlint             |
 | `pnpm format` | Format with oxfmt            |
