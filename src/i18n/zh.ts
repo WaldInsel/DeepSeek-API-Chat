@@ -53,6 +53,7 @@ export const zh = {
   regenerate: '重新生成',
   branchConversation: '创建分支',
   branchTitleSuffix: '-分支',
+  branchCreated: '已创建分支',
   continueGenerating: '继续生成',
   changeApiKey: '更换 API Key',
   topUp: '前往充值',

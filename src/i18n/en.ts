@@ -57,6 +57,7 @@ export const en = {
   regenerate: 'Regenerate',
   branchConversation: 'Create branch',
   branchTitleSuffix: '-branch',
+  branchCreated: 'Branch created',
   continueGenerating: 'Continue',
   changeApiKey: 'Change API Key',
   topUp: 'Top up',

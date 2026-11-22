@@ -198,7 +198,9 @@ export const AssistantMessage = memo(function AssistantMessage({
               disabled={busy}
               onClick={() => {
                 stopReadAloud()
-                branchSession(sessionId, message.id)
+                if (branchSession(sessionId, message.id)) {
+                  showToast({ key: 'branchCreated' })
+                }
               }}
             />
           </div>
