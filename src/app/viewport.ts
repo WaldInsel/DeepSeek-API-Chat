@@ -81,26 +81,32 @@ export const useMobileViewport = (enabled: boolean) => {
       frame.style.removeProperty('--app-keyboard-cover')
     }
     const update = () => {
-      if (viewport.scale !== 1) {
-        reset()
+      // iOS 的 scale 会报成 0.9999 / 1.0001，严格比较会把正常状态误判成缩放
+      if (Math.abs(viewport.scale - 1) > 0.01) {
+        if (restingHeight > 0) {
+          frame.style.setProperty('--app-viewport-height', `${restingHeight}px`)
+          frame.style.setProperty('--app-viewport-top', '0px')
+        }
+        return
+      }
+      const height = Math.round(viewport.height)
+      // 切后台返回或键盘动画中间帧会报 0 / 极小高度，写进去会让页面塌陷
+      if (height < 50) {
         return
       }
       const width = Math.round(window.innerWidth)
       if (width !== restingWidth) {
         // 横竖屏切换后旧的最大高度失效，按新视口重新记录
         restingWidth = width
-        restingHeight = Math.round(viewport.height)
+        restingHeight = height
       }
       if (editing) {
         frame.style.setProperty('--app-viewport-height', `${restingHeight}px`)
-        frame.style.setProperty(
-          '--app-keyboard-cover',
-          `${Math.max(0, restingHeight - Math.round(viewport.height))}px`
-        )
+        frame.style.setProperty('--app-keyboard-cover', `${Math.max(0, restingHeight - height)}px`)
         return
       }
-      restingHeight = Math.max(restingHeight, Math.round(viewport.height))
-      frame.style.setProperty('--app-viewport-height', `${Math.round(viewport.height)}px`)
+      restingHeight = Math.max(restingHeight, height)
+      frame.style.setProperty('--app-viewport-height', `${height}px`)
       frame.style.setProperty('--app-viewport-top', `${Math.round(viewport.offsetTop)}px`)
       frame.style.removeProperty('--app-keyboard-cover')
     }
@@ -169,7 +175,7 @@ export const useKeyboardInset = () => {
 
     const update = () => {
       // 双指缩放时会话列表也跟着缩放，不要把缩放后的高度记成整屏高度
-      if (viewport.scale !== 1) {
+      if (Math.abs(viewport.scale - 1) > 0.01) {
         return
       }
       const height = Math.round(viewport.height)
@@ -246,7 +252,7 @@ const isScrollableTarget = (target: EventTarget | null) => {
   return false
 }
 
-/** 阻止移动端整页滚动，保留内部可滚动区域的滚动和双指缩放。 */
+/** 阻止移动端整页滚动，保留内部可滚动区域的滚动。 */
 export const usePreventPageScroll = (enabled: boolean) => {
   useEffect(() => {
     if (!enabled) {
@@ -267,6 +273,38 @@ export const usePreventPageScroll = (enabled: boolean) => {
     return () => {
       document.removeEventListener('touchstart', start)
       document.removeEventListener('touchmove', move)
+    }
+  }, [enabled])
+}
+
+/**
+ * 禁用 App 内页面缩放。iOS 的 gesture 事件能拦住捏合缩放，
+ * 双指 touchmove 作为兜底；网页版不调用，保留浏览器自带缩放。
+ */
+export const usePreventZoom = (enabled: boolean) => {
+  useEffect(() => {
+    if (!enabled) {
+      return
+    }
+    const prevent = (event: Event) => {
+      event.preventDefault()
+    }
+    const preventPinch = (event: TouchEvent) => {
+      if (event.touches.length > 1) {
+        event.preventDefault()
+      }
+    }
+    // iOS 专有的 gesture 事件不在标准 DOM 类型里，只能按字符串注册
+    const gestureEvents = ['gesturestart', 'gesturechange', 'gestureend']
+    for (const name of gestureEvents) {
+      document.addEventListener(name, prevent, { passive: false })
+    }
+    document.addEventListener('touchmove', preventPinch, { passive: false })
+    return () => {
+      for (const name of gestureEvents) {
+        document.removeEventListener(name, prevent)
+      }
+      document.removeEventListener('touchmove', preventPinch)
     }
   }, [enabled])
 }

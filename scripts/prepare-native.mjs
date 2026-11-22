@@ -100,6 +100,9 @@ public class MainActivity extends BridgeActivity {
     WebView webView = getBridge() == null ? null : getBridge().getWebView();
     if (webView != null) {
       webView.addJavascriptInterface(new SystemBars(), "SystemBars");
+      webView.getSettings().setSupportZoom(false);
+      webView.getSettings().setBuiltInZoomControls(false);
+      webView.getSettings().setDisplayZoomControls(false);
       // 跟随系统「字体大小」；WebView 自己默认固定在 100%
       webView
           .getSettings()
