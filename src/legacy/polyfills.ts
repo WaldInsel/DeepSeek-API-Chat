@@ -148,3 +148,26 @@ if (!('text' in Blob.prototype)) {
     writable: true,
   })
 }
+// location.ts 在模块顶层构造 DisplayNames，缺失会让首屏直接白屏
+if (typeof (Intl as unknown as { DisplayNames?: unknown }).DisplayNames !== 'function') {
+  class DisplayNamesPolyfill {
+    of(code: string): string {
+      return code
+    }
+  }
+  Object.defineProperty(Intl, 'DisplayNames', {
+    value: DisplayNamesPolyfill,
+    configurable: true,
+    writable: true,
+  })
+}
+
+if (typeof queueMicrotask !== 'function') {
+  Object.defineProperty(window, 'queueMicrotask', {
+    value(callback: () => void): void {
+      Promise.resolve().then(callback)
+    },
+    configurable: true,
+    writable: true,
+  })
+}

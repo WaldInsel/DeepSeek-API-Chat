@@ -194,7 +194,7 @@ export const en = {
   advancedModeJoinNow: 'Join now',
   aboutUs: 'About',
   aboutDescription:
-    'A third-party chat client built on the DeepSeek API. Web, desktop, and Android share one frontend codebase, with no self-hosted backend required.',
+    'A DeepSeek API chat app built on the DeepSeek API and Chat Demo, made for everyone who loves simplicity.',
   aboutNonOfficial: 'Not an official DeepSeek product; not affiliated with DeepSeek.',
   aboutOpenSource: 'Open source, available for review',
   aboutRepositoryGithub: 'GitHub repository',
