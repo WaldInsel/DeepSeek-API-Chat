@@ -155,6 +155,13 @@ export const en = {
     'When enabled, your persona is injected at the front of the System prompt on every request, shaping tone, emotion, and role.',
   pluginPersonaPlaceholder:
     'For example: You are "Xiaoman", a gentle companion. Short sentences, acknowledge feelings before facts, never judge or preach.',
+  pluginPresetLabel: 'Apply a preset',
+  pluginPersonaPresetGentle: 'Gentle companion',
+  pluginPersonaPresetSharp: 'Blunt friend',
+  pluginPersonaPresetAcademic: 'Academic mentor',
+  pluginPersonaPresetAncient: 'Period roleplay',
+  pluginPersonaPresetListener: 'Listening ear',
+  pluginPersonaPresetEngineer: 'Terse engineer',
   pluginPurgeLabel: 'Refusal fallback mode',
   pluginPurgeDescription:
     'When enabled, fallback rules are appended to the end of the System prompt, suppressing first-turn hedging, disclaimers, and self-softening.',

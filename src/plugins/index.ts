@@ -12,7 +12,14 @@ import { nsfwPlugin } from './nsfw/index.js'
 import { personaPlugin } from './persona/index.js'
 import { purgePlugin } from './purge/index.js'
 
-export type { PluginContext, PluginMessage, PromptPatch, PromptPlugin } from './types.js'
+export type {
+  PluginContext,
+  PluginMessage,
+  PluginPreset,
+  PluginUiMeta,
+  PromptPatch,
+  PromptPlugin,
+} from './types.js'
 
 /** 宿主传给注册表的插件状态：默认关闭，必须显式开启才会执行 */
 export interface PluginState {

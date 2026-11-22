@@ -11,6 +11,7 @@
  * 预设列表不在这里 —— 设置页的编辑弹窗只认一段文本，预设由 UI 侧填入。
  */
 import type { PromptPatch, PromptPlugin } from '../types.js'
+import { PERSONA_PRESETS } from './presets.js'
 import { PERSONA_PROMPT } from './prompt.js'
 
 interface PersonaConfig {
@@ -34,6 +35,7 @@ export const personaPlugin: PromptPlugin = {
     hintKey: 'pluginPromptHintBuiltin',
     placeholderKey: 'pluginPersonaPlaceholder',
     editable: true,
+    presets: PERSONA_PRESETS,
   },
   defaultText: PERSONA_PROMPT,
   apply({ config }): PromptPatch | undefined {

@@ -31,6 +31,10 @@ declare const styles: {
   readonly "pluginTextarea": string;
   readonly "pluginCounter": string;
   readonly "pluginHint": string;
+  readonly "pluginPresets": string;
+  readonly "pluginPresetsLabel": string;
+  readonly "pluginPresetList": string;
+  readonly "pluginPresetButton": string;
   readonly "importProgress": string;
   readonly "importProgressTrack": string;
   readonly "importProgressFill": string;

@@ -33,6 +33,16 @@ export interface PromptPatch {
   readonly tail?: string
 }
 
+/** 预设正文：设置页在编辑弹窗里提供「套用预设」入口，点一下把正文填进输入框 */
+export interface PluginPreset {
+  /** 稳定标识，仅用于 React key 与将来持久化，不参与注入 */
+  readonly id: string
+  /** 按钮文案的 i18n 键名；文案集中在 src/i18n，插件不持有 UI 文案 */
+  readonly labelKey: string
+  /** 套用后填入编辑框的正文 */
+  readonly text: string
+}
+
 /** 设置页展示元数据：只存 i18n 键名，文案集中在 src/i18n，插件本身不持有文案 */
 export interface PluginUiMeta {
   /** 开关行左侧的标题 */
@@ -45,6 +55,8 @@ export interface PluginUiMeta {
   readonly placeholderKey?: string
   /** 是否提供正文编辑入口 */
   readonly editable?: boolean
+  /** 预设正文：有值时编辑弹窗顶部出现预设按钮，点一下填入输入框 */
+  readonly presets?: readonly PluginPreset[]
 }
 
 export interface PromptPlugin {

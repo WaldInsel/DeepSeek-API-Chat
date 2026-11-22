@@ -468,6 +468,50 @@
   color: var(--dsw-alias-label-tertiary);
 }
 
+.pluginPresets {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pluginPresetsLabel {
+  font-size: 0.75rem;
+  line-height: 18px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.pluginPresetList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pluginPresetButton {
+  padding: 4px 10px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 14px;
+  background-color: transparent;
+  color: var(--dsw-alias-label-primary);
+  font: inherit;
+  font-size: 0.75rem;
+  line-height: 18px;
+  white-space: nowrap;
+  cursor: pointer;
+  outline: none;
+  transition:
+    border-color var(--ds-transition-duration) var(--ds-ease-in-out),
+    background-color var(--ds-transition-duration) var(--ds-ease-in-out);
+
+  &:hover {
+    border-color: var(--dsw-alias-brand-primary);
+    background-color: var(--dsw-alias-interactive-bg-hover);
+  }
+
+  &:focus-visible {
+    box-shadow: 0 0 0 2px var(--dsw-alias-button-primary-fill);
+  }
+}
+
 .importProgress {
   display: flex;
   align-items: center;
