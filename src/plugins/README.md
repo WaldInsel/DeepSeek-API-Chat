@@ -15,10 +15,24 @@ src/plugins/
   nsfw/                插件：NSFW 创作模式注入（head）
     index.ts
     prompt.ts          正文（用 .ts 存，避免动构建配置加 raw loader）
+  persona/             插件：人格 / 文风注入（head）
+    index.ts
+    prompt.ts          内置骨架正文，用户可在设置里改写
   purge/               插件：拒答兜底（tail）
     index.ts
     prompt.ts
 ```
+
+## 现有插件
+
+| 插件 | order | 位置 | 分区 |
+| --- | --- | --- | --- |
+| `nsfw` | 100 | head | 非官方（`community: true`） |
+| `persona` | 200 | head | 内置 |
+| `custom-instructions` | 500 | tail | 内置 |
+| `purge` | 900 | tail | 非官方（`community: true`） |
+
+全开时的拼接顺序：`PERSONA → NSFW → SYSTEM → CUSTOM → PURGE`。
 
 ## 开关与配置
 
