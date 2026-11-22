@@ -38,6 +38,7 @@ The output is written to `dist/`. Deploy it to a static web server or open `dist
 Builds run in GitHub Actions:
 
 - [desktop.yml](.github/workflows/desktop.yml): Windows (NSIS) and Linux installers.
+- [macos.yml](.github/workflows/macos.yml): a macOS universal dmg for Intel and Apple Silicon.
 - [android.yml](.github/workflows/android.yml): debug and release APKs; release APKs are signed when the four signing secrets are configured.
 - [ios.yml](.github/workflows/ios.yml): an unsigned IPA; sign it locally with Sideloadly, AltStore, or similar before installing.
 
@@ -53,6 +54,7 @@ History import and export in Settings use ZIP archives. After confirmation and s
 | ------------- | ---------------------------- |
 | `pnpm dev`    | Start the development server |
 | `pnpm build`  | Build into `dist/`           |
+| `pnpm test`   | Run unit tests with Vitest   |
 | `pnpm type`   | Run TypeScript type checks   |
 | `pnpm lint`   | Lint with oxlint             |
 | `pnpm format` | Format with oxfmt            |
@@ -66,12 +68,14 @@ src/
   app/                 Application layout, themes, and global styles
   components/          Chat, settings, Markdown, and other UI components
   i18n/                English and Chinese translations
+  plugins/             Plugin registry, prompt composition, and built-in plugins
   services/
     api/               API requests, SSE, and protocol types
     chat/              Conversations, message branches, storage, and history import/export
     markdown/          Markdown parsing, syntax highlighting, and diagrams
     speech/            Audio recording and read-aloud playback
   utils/               Shared utilities
+  vendor/              Third-party runtime bundled in the repo (marked)
 ```
 
 ## License

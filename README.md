@@ -38,6 +38,7 @@ pnpm build
 构建在 GitHub Actions 中完成：
 
 - [desktop.yml](.github/workflows/desktop.yml)：Windows（NSIS）与 Linux 安装包。
+- [macos.yml](.github/workflows/macos.yml)：macOS 通用 dmg（Intel 与 Apple Silicon）。
 - [android.yml](.github/workflows/android.yml)：debug 与 release APK，配置四个签名 secret 后生成签名包。
 - [ios.yml](.github/workflows/ios.yml)：未签名 IPA，需自行用 Sideloadly、AltStore 等工具签名后安装。
 
@@ -53,6 +54,7 @@ API Key 和设置保存在浏览器 localStorage，会话及附件原件保存�
 | ------------- | ------------------- |
 | `pnpm dev`    | 启动开发服务器      |
 | `pnpm build`  | 构建到 `dist/`      |
+| `pnpm test`   | 运行单元测试        |
 | `pnpm type`   | TypeScript 类型检查 |
 | `pnpm lint`   | oxlint 检查         |
 | `pnpm format` | oxfmt 格式化        |
@@ -66,12 +68,14 @@ src/
   app/                 应用布局、主题与全局样式
   components/          聊天、设置、Markdown 等界面组件
   i18n/                中英文文案
+  plugins/             插件注册、提示词组合与内置插件
   services/
     api/               API 请求、SSE 与协议类型
     chat/              会话、消息分支、本地存储与历史导入导出
     markdown/          Markdown 解析、代码高亮与图表
     speech/            录音与朗读
   utils/               通用工具
+  vendor/              打包进仓库的第三方运行时（marked）
 ```
 
 ## 许可证
