@@ -33,12 +33,13 @@ pnpm build
 
 产物位于 `dist/`，可部署到静态服务器，也可直接打开 `dist/index.html`。
 
-## 打包桌面端与 Android
+## 打包桌面端、Android 与 iOS
 
 构建在 GitHub Actions 中完成：
 
 - [desktop.yml](.github/workflows/desktop.yml)：Windows（NSIS）与 Linux 安装包。
 - [android.yml](.github/workflows/android.yml)：debug 与 release APK，配置四个签名 secret 后生成签名包。
+- [ios.yml](.github/workflows/ios.yml)：未签名 IPA，需自行用 Sideloadly、AltStore 等工具签名后安装。
 
 ## 数据与存储
 

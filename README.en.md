@@ -33,12 +33,13 @@ pnpm build
 
 The output is written to `dist/`. Deploy it to a static web server or open `dist/index.html` directly.
 
-## Packaging desktop and Android builds
+## Packaging desktop, Android, and iOS builds
 
 Builds run in GitHub Actions:
 
 - [desktop.yml](.github/workflows/desktop.yml): Windows (NSIS) and Linux installers.
 - [android.yml](.github/workflows/android.yml): debug and release APKs; release APKs are signed when the four signing secrets are configured.
+- [ios.yml](.github/workflows/ios.yml): an unsigned IPA; sign it locally with Sideloadly, AltStore, or similar before installing.
 
 ## Data and storage
 
