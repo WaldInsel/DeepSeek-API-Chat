@@ -24,6 +24,13 @@ const readText = (config: unknown): string => {
 export const nsfwPlugin: PromptPlugin = {
   name: 'nsfw',
   order: 100,
+  community: true,
+  ui: {
+    labelKey: 'pluginNsfwLabel',
+    descriptionKey: 'pluginNsfwDescription',
+    hintKey: 'pluginPromptHintBuiltin',
+    editable: true,
+  },
   defaultText: NSFW_PROMPT,
   apply({ config }): PromptPatch {
     return { head: readText(config) || NSFW_PROMPT }

@@ -21,6 +21,13 @@ const readText = (config: unknown): string => {
 export const customInstructionsPlugin: PromptPlugin = {
   name: 'custom-instructions',
   order: 500,
+  ui: {
+    labelKey: 'pluginCustomInstructionsLabel',
+    descriptionKey: 'pluginCustomInstructionsDescription',
+    hintKey: 'pluginCustomInstructionsHint',
+    placeholderKey: 'pluginCustomInstructionsPlaceholder',
+    editable: true,
+  },
   apply({ config }): PromptPatch | undefined {
     const text = readText(config)
     return text ? { tail: text } : undefined

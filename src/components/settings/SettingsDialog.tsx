@@ -17,6 +17,7 @@ import {
 import { isCapacitor, isTauri } from '../../app/platform.js'
 import { pushBackHandler } from '../../app/backStack.js'
 import { useIsMobile } from '../../app/viewport.js'
+import { useAdvancedMode } from '../../services/advancedMode.js'
 import { useChatStore } from '../../services/chat/store.js'
 import {
   setLocale,
@@ -30,7 +31,7 @@ import {
   type ThinkingCollapse,
 } from '../../services/settings.js'
 import { useTranslate, type TranslationKey, type TranslationMessage } from '../../i18n/index.js'
-import { plugins } from '../../plugins/index.js'
+import { plugins, type PromptPlugin } from '../../plugins/index.js'
 import { Button } from '../base/Button.js'
 import { IconButton } from '../base/IconButton.js'
 import { Modal } from '../base/Modal.js'
@@ -404,9 +405,6 @@ const PLUGIN_PROMPT_LIMIT = 4000
 const readConfigText = (config: Record<string, unknown> | undefined): string =>
   typeof config?.text === 'string' ? config.text : ''
 
-/** 从注册表取插件内置正文，作为编辑初值与留空回退 */
-const pluginDefaultText = (name: string): string =>
-  plugins.find((plugin) => plugin.name === name)?.defaultText ?? ''
 
 /**
  * 编辑插件正文。
@@ -489,32 +487,27 @@ const PluginPromptDialog = ({
   )
 }
 
-/** 一个插件行：开关与正文都写在 pluginSettings 里，插件名即持久化的 key。 */
-const PluginToggleCell = ({
-  name,
-  label,
-  description,
-  hint,
-  placeholder,
-  editable = false,
-}: {
-  name: string
-  label: TranslationKey
-  description: ReactNode
-  hint?: TranslationKey
-  placeholder?: TranslationKey
-  editable?: boolean
-}) => {
+/**
+ * 一个插件行：展示文案来自插件的 ui 元数据，开关与正文写在 pluginSettings 里。
+ * 设置页不按插件名写死条目，新增插件只改插件定义与注册表。
+ */
+const PluginToggleCell = ({ plugin }: { plugin: PromptPlugin }) => {
   const t = useTranslate()
-  const state = useSettings((settings) => settings.pluginSettings[name])
+  const state = useSettings((settings) => settings.pluginSettings[plugin.name])
   const [editorOpen, setEditorOpen] = useState(false)
-  const builtin = pluginDefaultText(name)
+  const labelKey = (plugin.ui?.labelKey ?? plugin.name) as TranslationKey
+  const label = t(labelKey)
+  const descriptionKey = plugin.ui?.descriptionKey as TranslationKey | undefined
+  const hintKey = (plugin.ui?.hintKey ?? 'pluginPromptHintBuiltin') as TranslationKey
+  const placeholderKey = plugin.ui?.placeholderKey as TranslationKey | undefined
+  const builtin = plugin.defaultText ?? ''
   const initialText = readConfigText(state?.config) || builtin
+  const editable = plugin.ui?.editable === true
   return (
     <>
       <SettingCell
-        label={t(label)}
-        description={description}
+        label={label}
+        description={descriptionKey ? t(descriptionKey) : null}
         status={null}
         action={
           <div className={styles.pluginActions}>
@@ -522,14 +515,14 @@ const PluginToggleCell = ({
               <IconButton
                 size="xs"
                 icon={<IconEditOutline16 />}
-                tooltip={t('pluginPromptEditNamed', { name: t(label) })}
+                tooltip={t('pluginPromptEditNamed', { name: label })}
                 onClick={() => setEditorOpen(true)}
               />
             ) : null}
             <Switch
-              aria-label={t(label)}
+              aria-label={label}
               checked={state?.enabled === true}
-              onChange={(enabled) => setPluginEnabled(name, enabled)}
+              onChange={(enabled) => setPluginEnabled(plugin.name, enabled)}
             />
           </div>
         }
@@ -537,12 +530,12 @@ const PluginToggleCell = ({
       {editable ? (
         <PluginPromptDialog
           open={editorOpen}
-          name={name}
-          title={t('pluginPromptDialogTitle', { name: t(label) })}
+          name={plugin.name}
+          title={t('pluginPromptDialogTitle', { name: label })}
           builtin={builtin}
           initialText={initialText}
-          hint={t(hint ?? 'pluginPromptHintBuiltin')}
-          placeholder={placeholder ? t(placeholder) : undefined}
+          hint={t(hintKey)}
+          placeholder={placeholderKey ? t(placeholderKey) : undefined}
           onClose={() => setEditorOpen(false)}
         />
       ) : null}
@@ -550,39 +543,28 @@ const PluginToggleCell = ({
   )
 }
 
-/** 插件管理：内置插件与社区插件分栏，各自按注入位置排列（head → tail），开关控制是否进入请求的 system。 */
+/** 插件管理：按 community 分区；非官方插件只在高级模式开启时展示，条目全部来自注册表。 */
 const PluginManagement = () => {
   const t = useTranslate()
+  const advancedEnabled = useAdvancedMode((state) => state.enabled)
+  const builtinPlugins = plugins.filter((plugin) => plugin.community !== true)
+  const communityPlugins = plugins.filter((plugin) => plugin.community === true)
   return (
     <div className={styles.pluginList}>
       <section className={styles.pluginSection}>
         <div className={styles.pluginSectionTitle}>{t('pluginSectionBuiltin')}</div>
-        <PluginToggleCell
-          name="custom-instructions"
-          label="pluginCustomInstructionsLabel"
-          description={t('pluginCustomInstructionsDescription')}
-          hint="pluginCustomInstructionsHint"
-          placeholder="pluginCustomInstructionsPlaceholder"
-          editable
-        />
+        {builtinPlugins.map((plugin) => (
+          <PluginToggleCell key={plugin.name} plugin={plugin} />
+        ))}
       </section>
-      <section className={styles.pluginSection}>
-        <div className={styles.pluginSectionTitle}>{t('pluginSectionCommunity')}</div>
-        <PluginToggleCell
-          name="nsfw"
-          label="pluginNsfwLabel"
-          description={t('pluginNsfwDescription')}
-          hint="pluginPromptHintBuiltin"
-          editable
-        />
-        <PluginToggleCell
-          name="purge"
-          label="pluginPurgeLabel"
-          description={t('pluginPurgeDescription')}
-          hint="pluginPromptHintBuiltin"
-          editable
-        />
-      </section>
+      {advancedEnabled && communityPlugins.length > 0 ? (
+        <section className={styles.pluginSection}>
+          <div className={styles.pluginSectionTitle}>{t('pluginSectionCommunity')}</div>
+          {communityPlugins.map((plugin) => (
+            <PluginToggleCell key={plugin.name} plugin={plugin} />
+          ))}
+        </section>
+      ) : null}
     </div>
   )
 }

@@ -25,6 +25,13 @@ const readText = (config: unknown): string => {
 export const purgePlugin: PromptPlugin = {
   name: 'purge',
   order: 900,
+  community: true,
+  ui: {
+    labelKey: 'pluginPurgeLabel',
+    descriptionKey: 'pluginPurgeDescription',
+    hintKey: 'pluginPromptHintBuiltin',
+    editable: true,
+  },
   defaultText: PURGE_PROMPT,
   apply({ config }): PromptPatch {
     return { tail: readText(config) || PURGE_PROMPT }

@@ -33,13 +33,31 @@ export interface PromptPatch {
   readonly tail?: string
 }
 
+/** 设置页展示元数据：只存 i18n 键名，文案集中在 src/i18n，插件本身不持有文案 */
+export interface PluginUiMeta {
+  /** 开关行左侧的标题 */
+  readonly labelKey: string
+  /** 说明文字 */
+  readonly descriptionKey?: string
+  /** 编辑弹窗底部提示；不写用通用提示 */
+  readonly hintKey?: string
+  /** 编辑弹窗占位符 */
+  readonly placeholderKey?: string
+  /** 是否提供正文编辑入口 */
+  readonly editable?: boolean
+}
+
 export interface PromptPlugin {
-  /** 唯一名字，用于报错定位与将来 UI 展示 */
+  /** 唯一名字：报错定位与持久化 key（设置里的 pluginSettings[name]） */
   readonly name: string
   /** 多个插件时的执行顺序，小的先跑；不写按注册顺序 */
   readonly order?: number
+  /** 设置页展示元数据；不写则用插件名兜底、不显示说明与编辑入口 */
+  readonly ui?: PluginUiMeta
   /** 内置正文：设置页拿它当编辑初值与留空回退；真正拼什么仍以 apply() 为准 */
   readonly defaultText?: string
+  /** 社区 / 非官方插件：只在高级模式开启时执行；关闭时状态保留但不注入 */
+  readonly community?: boolean
   /** 唯一的扩展点：拿上下文，回补丁 */
   apply(context: PluginContext): PromptPatch | undefined
 }

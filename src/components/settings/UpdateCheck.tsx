@@ -1,6 +1,7 @@
 import clsx from 'clsx'
 import { useEffect, useRef, useState } from 'react'
 import { pushBackHandler } from '../../app/backStack.js'
+import { isWebApp } from '../../app/platform.js'
 import { openExternal } from '../../app/systemBars.js'
 import { useTranslate, type TranslationKey } from '../../i18n/index.js'
 import { registerVersionTap, setAdvancedMode, useAdvancedMode } from '../../services/advancedMode.js'
@@ -190,7 +191,10 @@ const AdvancedModeSetting = () => {
   )
 }
 
-/** 通用设置里的软件版本：手动检查更新，并提供四个下载入口；连续点五次版本号进入高级模式。 */
+/**
+ * 通用设置里的软件版本：客户端可手动检查更新，弹窗里提供四个下载入口；网页版没有更新通道，
+ * 只保留版本号与「关于我们」。连续点五次版本号进入高级模式，网页版同样可用。
+ */
 export const UpdateCheck = () => {
   const t = useTranslate()
   const [open, setOpen] = useState(false)
@@ -260,14 +264,16 @@ export const UpdateCheck = () => {
             >
               {t('aboutUs')}
             </Button>
-            <Button
-              variant="outlined"
-              size="m"
-              className={settingsStyles.cellButton}
-              onClick={openDialog}
-            >
-              {t('updateCheckButton')}
-            </Button>
+            {isWebApp() ? null : (
+              <Button
+                variant="outlined"
+                size="m"
+                className={settingsStyles.cellButton}
+                onClick={openDialog}
+              >
+                {t('updateCheckButton')}
+              </Button>
+            )}
           </div>
         </div>
       </div>

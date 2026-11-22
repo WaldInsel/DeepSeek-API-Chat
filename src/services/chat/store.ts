@@ -8,6 +8,7 @@ import { currentChatModel } from '../chatMode.js'
 import { extractFileIds, getFileErrorCode, isRetryableApiError } from '../api/errors.js'
 import { cancelUpload, describeUploadError, uploadAttachment, useUploads } from '../attachments.js'
 import { useSettings } from '../settings.js'
+import { useAdvancedMode } from '../advancedMode.js'
 import { translate } from '../../i18n/index.js'
 import {
   appendBranch,
@@ -1126,8 +1127,10 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
           settings.apiKey ?? '',
           {
             model: initial.model ?? currentChatModel(),
-            // 编译期内置插件：按设置里的开关与配置组装 system（插件出错不影响请求）
-            system: composeSystemPrompt(SYSTEM_PROMPT, messages, settings.pluginSettings),
+            // 编译期内置插件：按设置里的开关与配置组装 system（插件出错不影响请求；社区插件还受高级模式门禁）
+            system: composeSystemPrompt(SYSTEM_PROMPT, messages, settings.pluginSettings, {
+              advanced: useAdvancedMode.getState().enabled,
+            }),
             messages,
             thinking: { type: initial.thinking ? 'enabled' : 'disabled' },
             ...(initial.thinking

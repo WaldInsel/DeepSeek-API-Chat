@@ -19,6 +19,12 @@ export interface PluginState {
   readonly config?: unknown
 }
 
+/** 组装时的运行条件；与插件状态分开，避免把宿主开关混进配置 */
+export interface ComposeOptions {
+  /** 是否处于高级模式：社区插件只在开启时执行，关闭时状态保留但不注入 */
+  readonly advanced?: boolean
+}
+
 /** 注册表：顺序不重要，真正的执行顺序看各自的 order */
 export const plugins: readonly PromptPlugin[] = [
   nsfwPlugin,
@@ -70,14 +76,20 @@ const combine = (text: string, patch: PromptPatch): string => {
  *
  * 铁律：单个插件抛错只记录、不抛出 —— 一次提示词拼接失败，绝不能变成一次请求失败。
  * 插件默认关闭：states 里没有显式 enabled: true 的插件不执行，避免升级后静默改变请求。
+ * 社区插件另受高级模式门禁：options.advanced 不为 true 时整类跳过，只跳过注入，不改任何存储状态。
  */
 export const composeSystemPrompt = (
   system: string,
   messages: readonly PluginMessage[] = [],
-  states: Readonly<Record<string, PluginState>> = {}
+  states: Readonly<Record<string, PluginState>> = {},
+  options: ComposeOptions = {}
 ): string => {
   let text = system
   for (const plugin of [...plugins].sort(byOrder)) {
+    // 高级模式没开：社区插件的注入整段跳过，开关与正文仍留在 pluginSettings 里
+    if (plugin.community === true && options.advanced !== true) {
+      continue
+    }
     const state = states[plugin.name]
     if (state?.enabled !== true) {
       continue

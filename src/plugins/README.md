@@ -37,6 +37,10 @@ interface PluginState {
 - **正文可编辑**：插件导出 `defaultText`（内置正文）时，设置页的「编辑」弹窗以
   `config.text || defaultText` 为初值；保存值与内置正文一致时写空串，让插件继续回退到
   内置正文，避免把旧版本正文固化到本机设置里。
+- **社区插件门禁**：标记 `community: true` 的插件只在高级模式开启时执行。关闭高级模式只是
+  跳过注入，不改动 `pluginSettings` —— 原先的开关、正文都原样保留，重新进入高级模式即恢复。
+- **UI 由插件元数据驱动**：设置页按 `community` 分区、按 `ui.labelKey / descriptionKey` 渲染，
+  新增插件不需要改设置页组件；`ui.editable` 决定是否出现「编辑」入口。
 - 开关只影响之后的新请求，不改历史消息和已经生成的内容。
 
 ## 三条铁律
@@ -50,6 +54,7 @@ interface PluginState {
 ## 加一个插件
 
 1. 新建 `src/plugins/<名字>/index.ts`，导出 `<名字>Plugin`；有内置正文时可另建 `prompt.ts`。
+   非官方 / 社区插件在插件对象上加 `community: true`，由高级模式门禁控制是否注入。
 2. 在 `src/plugins/index.ts` 的 `plugins` 数组里加一行。
 3. 在设置页的插件列表里加对应文案与开关；需要持久化配置时，在 `src/services/settings.ts`
    的插件状态结构里使用该插件的 `name`。
@@ -60,7 +65,9 @@ interface PluginState {
 只有一处：`src/services/chat/store.ts` 组装请求时调用
 
 ```ts
-composeSystemPrompt(SYSTEM_PROMPT, messages, settings.pluginSettings)
+composeSystemPrompt(SYSTEM_PROMPT, messages, settings.pluginSettings, {
+  advanced: useAdvancedMode.getState().enabled,
+})
 ```
 
 除此之外不改任何既有文件。
