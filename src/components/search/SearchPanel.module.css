@@ -79,7 +79,7 @@
 @media not all and (min-width: 768px) {
   .panel {
     position: fixed;
-    inset: 0;
+    top: 0; right: 0; bottom: 0; left: 0;
     z-index: 700;
     width: auto;
     transform: translateY(100%);
