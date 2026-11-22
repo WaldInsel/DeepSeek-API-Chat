@@ -2,6 +2,11 @@
   display: inline-flex;
 }
 
+.anchor button > svg {
+  width: 18px;
+  height: 18px;
+}
+
 .active {
   background-color: var(--dsw-alias-button-ghost-active-fill);
 }
