@@ -292,8 +292,9 @@ const ThinkingViewport = ({
   const viewportRef = useRef<HTMLDivElement>(null)
   const [scrollable, setScrollable] = useState(false)
   // 只有内容真的超过限高才变成独立滚动区；短内容保留普通布局，
-  // 否则 overflow + overscroll-contain 会吃掉滚动链，让页面滑不动
-  useEffect(() => {
+  // 否则 overflow + overscroll-contain 会吃掉滚动链，让页面滑不动。
+  // 用 layout effect 在绘制前量好，长内容不会先溢出显示一帧
+  useLayoutEffect(() => {
     if (mode !== 'partial') {
       setScrollable(false)
       return

@@ -70,6 +70,7 @@ export const useSwipeDrawer = (enabled: boolean) => {
     let tracking = false
     let horizontal = false
     let openedAtStart = false
+    let startTarget: Element | null = null
     /** 最近 100ms 的横向位置，用来算松手时的甩动速度 */
     const samples: { x: number; t: number }[] = []
 
@@ -95,6 +96,7 @@ export const useSwipeDrawer = (enabled: boolean) => {
     const start = (event: TouchEvent) => {
       tracking = false
       horizontal = false
+      startTarget = null
       if (event.touches.length !== 1) {
         return
       }
@@ -106,17 +108,15 @@ export const useSwipeDrawer = (enabled: boolean) => {
       const state = useMobileSider.getState()
       const touch = event.touches[0]
       openedAtStart = state.open
-      // 打开态在抽屉上任意位置可左滑收起；关闭态整个界面都能右滑拉出，
-      // 左边缘保持优先（系统返回手势带内也直接交给抽屉）
-      tracking =
-        openedAtStart || touch.clientX <= EDGE_WIDTH || !isSwipeBlocked(target)
+      // 关闭态整个界面都可能起手；输入框、滑块、横向滚动内容这类排除判断
+      // 推迟到 move 里横向意图明确后做，普通点击和上下滚动不付这份开销
+      tracking = true
+      startTarget = target
       startX = touch.clientX
       startY = touch.clientY
       width = Math.max(1, drawerWidth())
-      if (tracking) {
-        samples.length = 0
-        record(touch.clientX)
-      }
+      samples.length = 0
+      record(touch.clientX)
     }
 
     const move = (event: TouchEvent) => {
@@ -137,6 +137,12 @@ export const useSwipeDrawer = (enabled: boolean) => {
         }
         // 关闭态只接管右滑，左滑没有任何可拖的内容
         if (!openedAtStart && dx < 0) {
+          tracking = false
+          return
+        }
+        // 横向意图明确了，才判断这块内容是否自己处理横向手势；
+        // 左边缘保持优先，系统返回手势带内直接交给抽屉
+        if (!openedAtStart && startX > EDGE_WIDTH && isSwipeBlocked(startTarget)) {
           tracking = false
           return
         }

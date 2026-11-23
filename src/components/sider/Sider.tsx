@@ -397,8 +397,9 @@ export const MobileSider = () => {
   const drawerRef = useRef<HTMLDivElement>(null)
   const maskRef = useRef<HTMLDivElement>(null)
 
-  // 拖动时只改 CSS 变量和过渡类，不触发 React 重渲染，长列表才不会掉帧
-  useEffect(() => {
+  // 拖动时只改 CSS 变量和过渡类，不触发 React 重渲染，长列表才不会掉帧。
+  // 用 layout effect 在首次绘制前写入进度，拖动挂载的首帧就不会闪在屏幕外
+  useLayoutEffect(() => {
     const apply = (state: { progress: number; dragging: boolean }) => {
       const progress = String(state.progress)
       drawerRef.current?.style.setProperty('--drawer-progress', progress)
