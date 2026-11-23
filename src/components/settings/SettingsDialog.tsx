@@ -390,7 +390,7 @@ const ThemeSetting = () => {
   )
 }
 
-/** 对话字体大小：只在高级模式下显示，只改对话消息区字号，不影响其他界面 */
+/** 对话与列表字体大小：只在高级模式下显示，同时改对话消息区与对话列表字号，不影响其他界面 */
 const chatFontSizeOptions: { value: ChatFontSize; label: TranslationKey }[] = [
   { value: 'small', label: 'settingsChatFontSizeSmall' },
   { value: 'standard', label: 'settingsChatFontSizeStandard' },

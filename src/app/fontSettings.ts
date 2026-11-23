@@ -1,7 +1,7 @@
 import { useAdvancedMode } from '../services/advancedMode.js'
 import { useSettings, type ChatFontSize } from '../services/settings.js'
 
-/** 档位对应的缩放系数，乘在对话内容的字号与行高上 */
+/** 档位对应的缩放系数，乘在对话内容与对话列表的字号、行高和列表项高度上 */
 const SCALES: Record<ChatFontSize, number> = {
   small: 0.9,
   standard: 1,
