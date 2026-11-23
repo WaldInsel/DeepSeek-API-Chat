@@ -2,9 +2,12 @@ import clsx from 'clsx'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslate } from '../../i18n/index.js'
 import {
+  IconCloseOutline16,
   IconPanelLeftOutline16,
+  IconPinOutline16,
   IconSearchOutline16,
   IconSettingsOutline16,
+  IconTrashOutline16,
   NewChatIcon,
 } from '../base/icons.js'
 import { setSiderCollapsed } from '../../services/settings.js'
@@ -13,7 +16,7 @@ import {
   limitSessionGroups,
   PINNED_GROUP_KEY,
 } from '../../services/chat/sessionGroups.js'
-import { usePinnedSessions } from '../../services/chat/pinned.js'
+import { pinSessions, usePinnedSessions } from '../../services/chat/pinned.js'
 import { newChat, removeSession, useChatStore } from '../../services/chat/store.js'
 import type { SessionSummary } from '../../services/chat/types.js'
 import { Button } from '../base/Button.js'
@@ -23,6 +26,7 @@ import { showToast } from '../base/toastState.js'
 import { usePresence } from '../base/usePresence.js'
 import { openSettings } from '../settings/settingsDialogState.js'
 import { openHistorySearch } from '../search/historySearchState.js'
+import { pushBackHandler } from '../../app/backStack.js'
 import { closeMobileSider, useMobileSider } from './mobileSiderState.js'
 import { SessionItem } from './SessionItem.js'
 import { UpdateBadge } from './UpdateBadge.js'
@@ -66,8 +70,78 @@ export const Sider = ({
     [groups, visibleCount]
   )
   const [deleting, setDeleting] = useState<SessionSummary | null>(null)
+  const [bulkDeleting, setBulkDeleting] = useState<SessionSummary[] | null>(null)
   const [deletePending, setDeletePending] = useState(false)
   const onDelete = useCallback((session: SessionSummary) => setDeleting(session), [])
+
+  // 多选：点三点菜单进入，底部设置与余额替换成批量操作
+  const [multiSelect, setMultiSelect] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(() => new Set())
+  const exitMultiSelect = useCallback(() => {
+    setMultiSelect(false)
+    setSelectedIds(new Set())
+  }, [])
+  /** 从哪条对话的菜单进入多选，就默认勾上它 */
+  const enterMultiSelect = useCallback((id: string) => {
+    setMultiSelect(true)
+    setSelectedIds(new Set([id]))
+  }, [])
+  const toggleSelected = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }, [])
+  /** 按列表当前顺序取勾选的会话，批量置顶后顺序与看到的列表一致 */
+  const selectedSessions = useMemo(
+    () => visibleGroups.flatMap((group) => group.sessions).filter((item) => selectedIds.has(item.id)),
+    [visibleGroups, selectedIds]
+  )
+
+  // 多选时先接管返回键：退出多选，而不是直接关掉抽屉
+  useEffect(() => {
+    if (!multiSelect) {
+      return undefined
+    }
+    return pushBackHandler(exitMultiSelect)
+  }, [multiSelect, exitMultiSelect])
+
+  const pinSelected = () => {
+    if (selectedSessions.length === 0) {
+      return
+    }
+    pinSessions(selectedSessions.map((item) => item.id))
+    exitMultiSelect()
+  }
+
+  const deleteSelected = async () => {
+    if (!bulkDeleting) {
+      return
+    }
+    setDeletePending(true)
+    const remaining = new Set<string>()
+    try {
+      for (const item of bulkDeleting) {
+        if (!(await removeSession(item.id))) {
+          remaining.add(item.id)
+        }
+      }
+    } finally {
+      setDeletePending(false)
+    }
+    setBulkDeleting(null)
+    if (remaining.size > 0) {
+      setSelectedIds(remaining)
+      showToast({ key: 'sessionDeleteFailed', type: 'error' })
+    } else {
+      exitMultiSelect()
+    }
+  }
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>
@@ -184,7 +258,11 @@ export const Sider = ({
                     session={session}
                     active={session.id === activeId}
                     pinned={pinnedSet.has(session.id)}
+                    multi={multiSelect}
+                    selected={selectedIds.has(session.id)}
                     onDelete={onDelete}
+                    onToggleSelect={toggleSelected}
+                    onEnterMultiSelect={enterMultiSelect}
                   />
                 ))}
               </div>
@@ -193,13 +271,55 @@ export const Sider = ({
         </div>
       </div>
       <div className={styles.bottom}>
-        <button type="button" className={styles.settings} onClick={() => openSettings('general')}>
-          <span className={styles.settingsIcon}>
-            <IconSettingsOutline16 />
-          </span>
-          <span className={styles.settingsLabel}>{t('settings')}</span>
-        </button>
-        <UpdateBadge />
+        {multiSelect ? (
+          <div className={styles.bulkActions}>
+            <button
+              type="button"
+              className={styles.bulkAction}
+              disabled={selectedSessions.length === 0}
+              onClick={pinSelected}
+            >
+              <span className={styles.bulkActionIcon}>
+                <IconPinOutline16 />
+              </span>
+              {t('pinSelectedSessions')}
+            </button>
+            <button
+              type="button"
+              className={clsx(styles.bulkAction, styles.bulkActionDanger)}
+              disabled={selectedSessions.length === 0}
+              onClick={() => setBulkDeleting(selectedSessions)}
+            >
+              <span className={styles.bulkActionIcon}>
+                <IconTrashOutline16 />
+              </span>
+              {t('deleteSelectedSessions')}
+            </button>
+            <button
+              type="button"
+              className={clsx(styles.bulkAction, styles.bulkActionIconOnly)}
+              aria-label={t('cancel')}
+              title={t('cancel')}
+              onClick={exitMultiSelect}
+            >
+              <IconCloseOutline16 />
+            </button>
+          </div>
+        ) : (
+          <>
+            <button
+              type="button"
+              className={styles.settings}
+              onClick={() => openSettings('general')}
+            >
+              <span className={styles.settingsIcon}>
+                <IconSettingsOutline16 />
+              </span>
+              <span className={styles.settingsLabel}>{t('settings')}</span>
+            </button>
+            <UpdateBadge />
+          </>
+        )}
       </div>
       {deleting ? (
         <Modal
@@ -236,6 +356,32 @@ export const Sider = ({
           }
         >
           {t('deleteSessionWithFilesDescription')}
+        </Modal>
+      ) : null}
+      {bulkDeleting ? (
+        <Modal
+          title={t('deleteSessionModalContentTitle')}
+          onClose={() => {
+            if (!deletePending) {
+              setBulkDeleting(null)
+            }
+          }}
+          footer={
+            <>
+              <Button
+                variant="outlined"
+                disabled={deletePending}
+                onClick={() => setBulkDeleting(null)}
+              >
+                {t('cancel')}
+              </Button>
+              <Button variant="danger" disabled={deletePending} onClick={deleteSelected}>
+                {t('delete')}
+              </Button>
+            </>
+          }
+        >
+          {t('deleteSessionsWithFilesDescription', { count: bulkDeleting.length })}
         </Modal>
       ) : null}
     </div>

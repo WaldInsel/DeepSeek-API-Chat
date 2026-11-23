@@ -42,6 +42,31 @@
   line-height: calc(18px * var(--chat-font-scale));
 }
 
+/* 多选模式：左侧留出勾选圈的位置，标题整体右移 */
+.item.multi {
+  padding-left: calc(6px * var(--chat-font-scale));
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: calc(18px * var(--chat-font-scale));
+  height: calc(18px * var(--chat-font-scale));
+  margin-right: calc(6px * var(--chat-font-scale));
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.item.selected {
+  background-color: var(--dsw-specific-sidebar-nav-item-hover);
+  color: var(--dsw-alias-label-primary);
+
+  .check {
+    color: var(--dsw-alias-brand-primary);
+  }
+}
+
 .action {
   display: none;
   flex-shrink: 0;

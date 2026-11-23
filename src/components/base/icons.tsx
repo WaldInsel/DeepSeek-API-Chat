@@ -130,6 +130,37 @@ export const IconEllipsisOutline16 = () => (
   </svg>
 )
 
+/** 对话列表多选：两行「圈 + 直线」 */
+export const IconMultiSelectOutline16 = () => (
+  <svg width={16} height={16} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="3.2" cy="4.6" r="2.1" stroke="currentColor" strokeWidth={1.4} />
+    <path d="M7.6 4.6H13" stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" />
+    <circle cx="3.2" cy="11.4" r="2.1" stroke="currentColor" strokeWidth={1.4} />
+    <path d="M7.6 11.4H13" stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" />
+  </svg>
+)
+
+/** 多选未选中：空心圈 */
+export const IconCircleOutline16 = () => (
+  <svg width={16} height={16} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth={1.4} />
+  </svg>
+)
+
+/** 多选已选中：实心圈加白勾 */
+export const IconCircleChecked16 = () => (
+  <svg width={16} height={16} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="8" cy="8" r="7" fill="currentColor" />
+    <path
+      d="M4.9 8.2 7 10.3l4.1-4.1"
+      stroke="var(--dsw-alias-label-inverted, #fff)"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+)
+
 /** 置顶图标；off 表示已置顶，叠加一条从左上到右下的取消线 */
 export const IconPinOutline16 = ({ off = false }: { off?: boolean }) => (
   <svg

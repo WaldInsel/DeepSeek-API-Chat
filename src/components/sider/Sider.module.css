@@ -210,6 +210,65 @@
   color: var(--dsw-alias-label-primary);
 }
 
+/* 多选时替换设置与余额：全部置顶、全部删除、取消 */
+.bulkActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.bulkAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  padding: 0 6px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 100px;
+  background: transparent;
+  color: var(--dsw-alias-label-primary);
+  font: inherit;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background-color: var(--dsw-specific-sidebar-nav-item-hover);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
+.bulkActionIcon {
+  display: flex;
+  flex-shrink: 0;
+}
+
+/* 取消只显示 X 图标，固定成方形按钮 */
+.bulkActionIconOnly {
+  flex: 0 0 auto;
+  width: 32px;
+  padding: 0;
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.bulkActionDanger {
+  color: var(--dsw-alias-state-error-primary);
+}
+
 /* 有新版本时出现在设置按钮右边 */
 .updateBadge {
   flex-shrink: 0;
@@ -354,6 +413,15 @@
   .bottom {
     height: auto;
     padding: 12px 0;
+  }
+
+  .bulkAction {
+    height: 40px;
+    font-size: 1rem;
+  }
+
+  .bulkActionIconOnly {
+    width: 40px;
   }
 
   .settings {

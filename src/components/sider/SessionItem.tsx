@@ -2,8 +2,11 @@ import clsx from 'clsx'
 import { memo, useEffect, useRef, useState } from 'react'
 import { useTranslate } from '../../i18n/index.js'
 import {
+  IconCircleChecked16,
+  IconCircleOutline16,
   IconEditOutline16,
   IconEllipsisOutline16,
+  IconMultiSelectOutline16,
   IconPinOutline16,
   IconTrashOutline16,
 } from '../base/icons.js'
@@ -19,12 +22,21 @@ export const SessionItem = memo(function SessionItem({
   session,
   active,
   pinned,
+  multi = false,
+  selected = false,
   onDelete,
+  onToggleSelect,
+  onEnterMultiSelect,
 }: {
   session: SessionSummary
   active: boolean
   pinned: boolean
+  /** 多选模式：左侧显示勾选圈，点整行切换勾选，不再显示三点菜单 */
+  multi?: boolean
+  selected?: boolean
   onDelete: (session: SessionSummary) => void
+  onToggleSelect?: (id: string) => void
+  onEnterMultiSelect?: (id: string) => void
 }) {
   const t = useTranslate()
   const [editing, setEditing] = useState(false)
@@ -71,7 +83,7 @@ export const SessionItem = memo(function SessionItem({
     }
   }, [editing])
 
-  if (editing) {
+  if (editing && !multi) {
     const finish = (title: string) => {
       setEditing(false)
       if (title.trim() && title.trim() !== displayTitle) {
@@ -99,48 +111,72 @@ export const SessionItem = memo(function SessionItem({
 
   return (
     <div
-      className={clsx(styles.item, active && styles.active)}
+      className={clsx(
+        styles.item,
+        !multi && active && styles.active,
+        multi && styles.multi,
+        selected && styles.selected
+      )}
+      role={multi ? 'checkbox' : undefined}
+      aria-checked={multi ? selected : undefined}
       onClick={() => {
+        if (multi) {
+          onToggleSelect?.(session.id)
+          return
+        }
         selectSession(session.id)
         closeMobileSider()
       }}
     >
+      {multi ? (
+        <span className={styles.check}>
+          {selected ? <IconCircleChecked16 /> : <IconCircleOutline16 />}
+        </span>
+      ) : null}
       <div className={styles.title}>{displayTitle}</div>
-      <div className={styles.action} onClick={(event) => event.stopPropagation()}>
-        <Menu
-          options={[
-            {
-              key: 'pin',
-              label: t(pinned ? 'sessionItemMenuUnpinOption' : 'sessionItemMenuPinOption'),
-              icon: <IconPinOutline16 off={pinned} />,
-              onSelect: () => togglePinnedSession(session.id),
-            },
-            {
-              key: 'rename',
-              label: t('sessionItemMenuRenameOption'),
-              icon: <IconEditOutline16 />,
-              onSelect: () => setEditing(true),
-            },
-            {
-              key: 'delete',
-              label: t('delete'),
-              icon: <IconTrashOutline16 />,
-              danger: true,
-              onSelect: () => onDelete(session),
-            },
-          ]}
-        >
-          {({ open, toggle }) => (
-            <IconButton
-              icon={<IconEllipsisOutline16 />}
-              aria-label={t('more')}
-              aria-haspopup="menu"
-              aria-expanded={open}
-              onClick={toggle}
-            />
-          )}
-        </Menu>
-      </div>
+      {multi ? null : (
+        <div className={styles.action} onClick={(event) => event.stopPropagation()}>
+          <Menu
+            options={[
+              {
+                key: 'pin',
+                label: t(pinned ? 'sessionItemMenuUnpinOption' : 'sessionItemMenuPinOption'),
+                icon: <IconPinOutline16 off={pinned} />,
+                onSelect: () => togglePinnedSession(session.id),
+              },
+              {
+                key: 'rename',
+                label: t('sessionItemMenuRenameOption'),
+                icon: <IconEditOutline16 />,
+                onSelect: () => setEditing(true),
+              },
+              {
+                key: 'multi',
+                label: t('sessionItemMenuMultiSelectOption'),
+                icon: <IconMultiSelectOutline16 />,
+                onSelect: () => onEnterMultiSelect?.(session.id),
+              },
+              {
+                key: 'delete',
+                label: t('delete'),
+                icon: <IconTrashOutline16 />,
+                danger: true,
+                onSelect: () => onDelete(session),
+              },
+            ]}
+          >
+            {({ open, toggle }) => (
+              <IconButton
+                icon={<IconEllipsisOutline16 />}
+                aria-label={t('more')}
+                aria-haspopup="menu"
+                aria-expanded={open}
+                onClick={toggle}
+              />
+            )}
+          </Menu>
+        </div>
+      )}
     </div>
   )
 })

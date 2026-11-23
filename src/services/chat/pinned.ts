@@ -35,6 +35,17 @@ export const togglePinnedSession = (id: string) => {
   apply(ids.includes(id) ? ids.filter((item) => item !== id) : [id, ...ids])
 }
 
+/** 批量置顶：传入顺序即新的展示顺序，已在置顶里的不会被取消，也不重复。 */
+export const pinSessions = (ids: string[]) => {
+  const current = usePinnedSessions.getState().ids
+  const ordered = [...new Set(ids)]
+  const rest = current.filter((id) => !ordered.includes(id))
+  if (ordered.length === 0) {
+    return
+  }
+  apply([...ordered, ...rest])
+}
+
 export const removePinnedSession = (id: string) => {
   const ids = usePinnedSessions.getState().ids
   if (ids.includes(id)) {
