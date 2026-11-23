@@ -11,13 +11,16 @@ export type ThemePreference = 'light' | 'dark' | 'system'
 /** 思考内容的呈现方式：完全折叠 / 部分折叠（限高滚动）/ 不折叠 */
 export type ThinkingCollapse = 'full' | 'partial' | 'none'
 
+/** 对话内容字号档位；只在高级模式下可调，未保存过时标准 */
+export type ChatFontSize = 'small' | 'standard' | 'large' | 'xlarge'
+
 /** 插件在本机的状态；默认关闭，config 由各插件自行约定形状 */
 export type PluginSettings = Record<
   string,
   { enabled: boolean; config?: Record<string, unknown> }
 >
 
-/** 本机设置，存 localStorage：API Key、语言、主题、位置、朗读音色、自动朗读、深度思考与强度、智能搜索开关、思考折叠、侧边栏收起状态、插件状态 */
+/** 本机设置，存 localStorage：API Key、语言、主题、位置、朗读音色、自动朗读、深度思考与强度、智能搜索开关、思考折叠、对话字号、侧边栏收起状态、插件状态 */
 type Settings = {
   apiKey: string | null
   locale: Locale
@@ -28,6 +31,7 @@ type Settings = {
   thinking: boolean
   thinkingEffort: ThinkingEffort
   thinkingCollapse: ThinkingCollapse
+  chatFontSize: ChatFontSize
   search: boolean
   siderCollapsed: boolean
   pluginSettings: PluginSettings
@@ -43,6 +47,7 @@ const KEYS = {
   thinking: 'deepseek-api-chat:thinking',
   thinkingEffort: 'deepseek-api-chat:thinking-effort',
   thinkingCollapse: 'deepseek-api-chat:thinking-collapse',
+  chatFontSize: 'deepseek-api-chat:chat-font-size',
   search: 'deepseek-api-chat:search',
   siderCollapsed: 'deepseek-api-chat:sider-collapsed',
   pluginSettings: 'deepseek-api-chat:plugin-settings',
@@ -137,6 +142,12 @@ const initialThinkingCollapse = (): ThinkingCollapse => {
   return saved === 'full' || saved === 'none' ? saved : 'partial'
 }
 
+/** 未保存过时标准字号；非法值回退标准 */
+const initialChatFontSize = (): ChatFontSize => {
+  const saved = read(KEYS.chatFontSize)
+  return saved === 'small' || saved === 'large' || saved === 'xlarge' ? saved : 'standard'
+}
+
 /** 旧版本只有开关：明确关闭过就保持关闭，其余（含新用户）默认高。 */
 const initialThinkingEffort = (): ThinkingEffort => {
   const saved = read(KEYS.thinkingEffort)
@@ -158,6 +169,7 @@ export const useSettings = create<Settings>(() => ({
   thinking: initialEffort !== 'none',
   thinkingEffort: initialEffort,
   thinkingCollapse: initialThinkingCollapse(),
+  chatFontSize: initialChatFontSize(),
   search: read(KEYS.search) === 'true',
   siderCollapsed: read(KEYS.siderCollapsed) === 'true',
   pluginSettings: parsePluginSettings(),
@@ -211,6 +223,11 @@ export const setThinkingEffort = (thinkingEffort: ThinkingEffort) => {
 export const setThinkingCollapse = (thinkingCollapse: ThinkingCollapse) => {
   write(KEYS.thinkingCollapse, thinkingCollapse)
   useSettings.setState({ thinkingCollapse })
+}
+
+export const setChatFontSize = (chatFontSize: ChatFontSize) => {
+  write(KEYS.chatFontSize, chatFontSize)
+  useSettings.setState({ chatFontSize })
 }
 
 export const setSearch = (search: boolean) => {

@@ -1,4 +1,6 @@
 :root {
+  /* 对话内容字号缩放系数：1 为标准；只由高级模式下的「对话字体大小」改写 */
+  --chat-font-scale: 1;
   --dsw-font-family:
     system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
     'Open Sans', 'Helvetica Neue', sans-serif;
@@ -229,30 +231,64 @@ body {
 }
 
 body {
-  --dsw-font-markdown-h1: var(--fw-bold) 1.5rem/2.125rem var(--dsw-font-family);
+  /* 对话内容尺寸：字号与行高同比乘 --chat-font-scale，比例保持不变。
+     中间变量承载 calc，font 简写里只出现 var，避免构建期对简写的解析差异 */
+  --chat-md-h1-size: calc(1.5rem * var(--chat-font-scale));
+  --chat-md-h1-line: calc(2.125rem * var(--chat-font-scale));
+  --chat-md-h2-size: calc(1.375rem * var(--chat-font-scale));
+  --chat-md-h2-line: calc(2rem * var(--chat-font-scale));
+  --chat-md-h3-size: calc(1.25rem * var(--chat-font-scale));
+  --chat-md-h3-line: calc(1.875rem * var(--chat-font-scale));
+  --chat-md-h4-size: calc(1rem * var(--chat-font-scale));
+  --chat-md-h4-line: calc(1.75rem * var(--chat-font-scale));
+  --chat-md-base-size: calc(1rem * var(--chat-font-scale));
+  --chat-md-base-line: calc(1.75rem * var(--chat-font-scale));
+  --chat-md-table-size: calc(0.9375rem * var(--chat-font-scale));
+  --chat-md-table-line: calc(1.5625rem * var(--chat-font-scale));
+  --chat-md-small-size: calc(0.875rem * var(--chat-font-scale));
+  --chat-md-small-line: calc(1.5rem * var(--chat-font-scale));
+  --chat-md-code-size: calc(0.875rem * var(--chat-font-scale));
+  --chat-md-code-line: calc(1.375rem * var(--chat-font-scale));
+  --chat-md-code-block-size: calc(0.8125rem * var(--chat-font-scale));
+  --chat-md-code-block-line: calc(1.375rem * var(--chat-font-scale));
 
-  --dsw-font-markdown-h2: var(--fw-bold) 1.375rem/2rem var(--dsw-font-family);
+  --dsw-font-markdown-h1: var(--fw-bold) var(--chat-md-h1-size)/var(--chat-md-h1-line)
+    var(--dsw-font-family);
 
-  --dsw-font-markdown-h3: var(--fw-bold) 1.25rem/1.875rem var(--dsw-font-family);
+  --dsw-font-markdown-h2: var(--fw-bold) var(--chat-md-h2-size)/var(--chat-md-h2-line)
+    var(--dsw-font-family);
 
-  --dsw-font-markdown-h4: var(--fw-semibold) 1rem/1.75rem var(--dsw-font-family);
+  --dsw-font-markdown-h3: var(--fw-bold) var(--chat-md-h3-size)/var(--chat-md-h3-line)
+    var(--dsw-font-family);
 
-  --dsw-font-markdown-base: var(--fw-normal) 1rem/1.75rem var(--dsw-font-family);
+  --dsw-font-markdown-h4: var(--fw-semibold) var(--chat-md-h4-size)/var(--chat-md-h4-line)
+    var(--dsw-font-family);
 
-  --dsw-font-markdown-base-strong: var(--fw-semibold) 1rem/1.75rem var(--dsw-font-family);
+  --dsw-font-markdown-base: var(--fw-normal) var(--chat-md-base-size)/var(--chat-md-base-line)
+    var(--dsw-font-family);
 
-  --dsw-font-markdown-table: var(--fw-normal) 0.9375rem/1.5625rem var(--dsw-font-family);
+  --dsw-font-markdown-base-strong: var(--fw-semibold) var(--chat-md-base-size)/var(--chat-md-base-line)
+    var(--dsw-font-family);
 
-  --dsw-font-markdown-table-head: var(--fw-medium) 0.9375rem/1.5625rem var(--dsw-font-family);
+  --dsw-font-markdown-table: var(--fw-normal) var(--chat-md-table-size)/var(--chat-md-table-line)
+    var(--dsw-font-family);
 
-  --dsw-font-markdown-small: var(--fw-normal) 0.875rem/1.5rem var(--dsw-font-family);
+  --dsw-font-markdown-table-head: var(--fw-medium) var(--chat-md-table-size)/var(--chat-md-table-line)
+    var(--dsw-font-family);
 
-  --dsw-font-markdown-small-strong: var(--fw-semibold) 0.875rem/1.5rem var(--dsw-font-family);
+  --dsw-font-markdown-small: var(--fw-normal) var(--chat-md-small-size)/var(--chat-md-small-line)
+    var(--dsw-font-family);
 
-  --dsw-font-markdown-code: var(--fw-normal) 0.875rem/1.375rem var(--ds-font-family-code);
+  --dsw-font-markdown-small-strong: var(--fw-semibold) var(--chat-md-small-size)/var(--chat-md-small-line)
+    var(--dsw-font-family);
 
-  --dsw-font-markdown-code-block: var(--fw-normal) 0.8125rem/1.375rem var(--ds-font-family-code);
+  --dsw-font-markdown-code: var(--fw-normal) var(--chat-md-code-size)/var(--chat-md-code-line)
+    var(--ds-font-family-code);
 
+  --dsw-font-markdown-code-block: var(--fw-normal) var(--chat-md-code-block-size)/var(--chat-md-code-block-line)
+    var(--ds-font-family-code);
+
+  /* 以下两个变量也被搜索面板、文件查看器、会话卡片和移动端头部使用，不随对话字号缩放 */
   --dsw-font-s-strong-14: var(--fw-medium) 0.875rem/1.375rem var(--dsw-font-family);
 
   --dsw-font-xs-13: var(--fw-normal) 0.8125rem/1.25rem var(--dsw-font-family);

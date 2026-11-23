@@ -125,6 +125,11 @@ export const zh = {
   settingsThinkingCollapseFull: '完全折叠',
   settingsThinkingCollapsePartial: '部分折叠',
   settingsThinkingCollapseNone: '不折叠',
+  settingsChatFontSize: '对话字体大小',
+  settingsChatFontSizeSmall: '小',
+  settingsChatFontSizeStandard: '标准',
+  settingsChatFontSizeLarge: '大',
+  settingsChatFontSizeXLarge: '特大',
 
   settingDialogAsideGeneralOptionLabel: '通用设置',
   settingDialogAsideDataOptionLabel: '数据管理',

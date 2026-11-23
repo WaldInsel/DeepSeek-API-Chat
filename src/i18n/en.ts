@@ -130,6 +130,11 @@ export const en = {
   settingsThinkingCollapseFull: 'Fully collapsed',
   settingsThinkingCollapsePartial: 'Partially collapsed',
   settingsThinkingCollapseNone: 'Expanded',
+  settingsChatFontSize: 'Chat font size',
+  settingsChatFontSizeSmall: 'Small',
+  settingsChatFontSizeStandard: 'Standard',
+  settingsChatFontSizeLarge: 'Large',
+  settingsChatFontSizeXLarge: 'Extra large',
 
   settingDialogAsideGeneralOptionLabel: 'General',
   settingDialogAsideDataOptionLabel: 'Data',

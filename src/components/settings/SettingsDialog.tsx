@@ -20,6 +20,7 @@ import { useIsMobile } from '../../app/viewport.js'
 import { useAdvancedMode } from '../../services/advancedMode.js'
 import { useChatStore } from '../../services/chat/store.js'
 import {
+  setChatFontSize,
   setLocale,
   setPluginConfig,
   setPluginEnabled,
@@ -27,6 +28,7 @@ import {
   setThinkingCollapse,
   setTtsVoice,
   useSettings,
+  type ChatFontSize,
   type ThemePreference,
   type ThinkingCollapse,
 } from '../../services/settings.js'
@@ -128,6 +130,7 @@ const SettingsContent = ({ state }: { state: 'open' | 'closed' }) => {
           {section === 'general' ? (
             <>
               <ThemeSetting />
+              <ChatFontSizeSetting />
               <LocaleSetting />
               <ThinkingCollapseSetting />
               <TtsVoiceSetting />
@@ -381,6 +384,40 @@ const ThemeSetting = () => {
           value={themePreference}
           options={themeOptions.map((option) => ({ value: option.value, label: t(option.label) }))}
           onChange={setThemePreference}
+        />
+      }
+    />
+  )
+}
+
+/** 对话字体大小：只在高级模式下显示，只改对话消息区字号，不影响其他界面 */
+const chatFontSizeOptions: { value: ChatFontSize; label: TranslationKey }[] = [
+  { value: 'small', label: 'settingsChatFontSizeSmall' },
+  { value: 'standard', label: 'settingsChatFontSizeStandard' },
+  { value: 'large', label: 'settingsChatFontSizeLarge' },
+  { value: 'xlarge', label: 'settingsChatFontSizeXLarge' },
+]
+
+const ChatFontSizeSetting = () => {
+  const t = useTranslate()
+  const enabled = useAdvancedMode((state) => state.enabled)
+  const chatFontSize = useSettings((state) => state.chatFontSize)
+  if (!enabled) {
+    return null
+  }
+  return (
+    <SettingCell
+      label={t('settingsChatFontSize')}
+      status={null}
+      action={
+        <Select
+          ariaLabel={t('settingsChatFontSize')}
+          value={chatFontSize}
+          options={chatFontSizeOptions.map((option) => ({
+            value: option.value,
+            label: t(option.label),
+          }))}
+          onChange={setChatFontSize}
         />
       }
     />
