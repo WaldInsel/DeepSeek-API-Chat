@@ -9,8 +9,8 @@ export const BAIDU_PAN_URL = 'https://pan.baidu.com/s/1v_7pM502Ek31azc4Zv1uYw?pw
 export const PAN123_URL = 'https://1851751239.share.123pan.cn/123pan/XH7Bvd-n9rg'
 const LATEST_RELEASE_API = `https://api.github.com/repos/${REPOSITORY}/releases/latest`
 const GITEE_LATEST_RELEASE_API = `https://gitee.com/api/v5/repos/${REPOSITORY}/releases/latest`
-/** 启动后等半分钟再查，避开首屏渲染和初始化请求 */
-const CHECK_DELAY_MS = 30_000
+/** 打开应用后 5 秒再查，给首屏渲染和初始化请求留出时间 */
+const CHECK_DELAY_MS = 5_000
 /** 每个来源最多等 6 秒；GitHub 失败后再试 Gitee */
 const FETCH_TIMEOUT_MS = 6_000
 
