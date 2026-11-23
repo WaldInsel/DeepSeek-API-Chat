@@ -75,7 +75,7 @@ export const App = () => {
   // App 内禁用页面缩放，网页版保留浏览器缩放
   usePreventZoom(isMobile && isCapacitor())
 
-  // 安卓：从左侧右滑拉出对话列表，抽屉上左滑收起；设置、搜索结果这类全屏浮层打开时不接管手势
+  // 安卓：主界面与对话界面任意位置右滑拉出对话列表，抽屉上左滑收起；设置、搜索结果这类全屏浮层打开时不接管手势
   const settingsOpen = useSettingsDialog((state) => state.open)
   const searchOpen = useSearchPanel((state) => state.entry !== null)
   useSwipeDrawer(isMobile && !settingsOpen && !searchOpen)

@@ -6,7 +6,7 @@ import {
   useMobileSider,
 } from './mobileSiderState.js'
 
-/** 从屏幕左侧多宽以内起手，才算在拉出侧边栏（避开安卓系统返回手势的触发带） */
+/** 从屏幕左侧多宽以内起手，直接算在拉出侧边栏（避开安卓系统返回手势的触发带） */
 const EDGE_WIDTH = 40
 /** 横向移动超过这个距离才接管手势，避免误伤点击和纵向滚动 */
 const ACTIVATE_DISTANCE = 12
@@ -16,6 +16,31 @@ const OPEN_AT = 0.3
 const CLOSE_AT = 0.7
 /** 甩动速度阈值（px/ms）：手速快时不再要求拖够比例 */
 const FLING_VELOCITY = 0.35
+
+/** 这些区域自己处理横向手势：文字选择、滑块拖动、横向滚动的内容 */
+const IGNORE_SELECTOR =
+  'input, textarea, select, [contenteditable="true"], [role="slider"], [role="radiogroup"], [data-swipe-ignore]'
+
+/** 内容真的能横向滚动时才让给内容；仅仅写了 overflow-x:auto 但没超宽不影响拉抽屉 */
+const hasHorizontalScrollable = (target: Element) => {
+  for (let node: Element | null = target; node && node !== document.body; node = node.parentElement) {
+    if (!(node instanceof HTMLElement)) {
+      continue
+    }
+    const { overflowX } = getComputedStyle(node)
+    if (
+      (overflowX === 'auto' || overflowX === 'scroll') &&
+      node.scrollWidth > node.clientWidth + 1
+    ) {
+      return true
+    }
+  }
+  return false
+}
+
+/** 从这块内容起手时是否不该拉抽屉 */
+const isSwipeBlocked = (target: Element | null) =>
+  target !== null && (target.closest(IGNORE_SELECTOR) !== null || hasHorizontalScrollable(target))
 
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value))
 
@@ -29,7 +54,8 @@ const drawerWidth = () => {
 }
 
 /**
- * 移动端抽屉手势：左边缘右滑拉出、抽屉上左滑收起。
+ * 移动端抽屉手势：主界面与对话界面任意位置右滑拉出、抽屉上左滑收起。
+ * 输入框、滑块、横向可滚动内容等会自己处理横向手势的区域不接管；
  * 拖动过程中实时更新抽屉位移，松手后按当前进度决定打开还是关闭；
  * 横向手势才接管，纵向滑动照常交给列表滚动。
  */
@@ -80,7 +106,10 @@ export const useSwipeDrawer = (enabled: boolean) => {
       const state = useMobileSider.getState()
       const touch = event.touches[0]
       openedAtStart = state.open
-      tracking = openedAtStart || touch.clientX <= EDGE_WIDTH
+      // 打开态在抽屉上任意位置可左滑收起；关闭态整个界面都能右滑拉出，
+      // 左边缘保持优先（系统返回手势带内也直接交给抽屉）
+      tracking =
+        openedAtStart || touch.clientX <= EDGE_WIDTH || !isSwipeBlocked(target)
       startX = touch.clientX
       startY = touch.clientY
       width = Math.max(1, drawerWidth())
