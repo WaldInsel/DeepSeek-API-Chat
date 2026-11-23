@@ -388,11 +388,12 @@ export const Sider = ({
   )
 }
 
-/** 移动端抽屉：浮在页面上方，点空白区域关闭；从左侧滑入、滑出 */
+/** 移动端抽屉：浮在页面上方，点空白区域关闭；手指拖动时全程跟手滑入、滑出 */
 export const MobileSider = () => {
   const open = useMobileSider((state) => state.open)
-  // 关闭时保留 DOM 播完滑出动画
-  const { mounted, visible } = usePresence(open)
+  const dragging = useMobileSider((state) => state.dragging)
+  // 拖动阶段就要挂载，抽屉才会从第一像素跟着手指滑出；关闭时保留 DOM 播完滑出动画
+  const { mounted, visible } = usePresence(open || dragging)
   const drawerRef = useRef<HTMLDivElement>(null)
   const maskRef = useRef<HTMLDivElement>(null)
 
@@ -415,7 +416,7 @@ export const MobileSider = () => {
     <>
       <div
         ref={maskRef}
-        className={clsx(styles.drawerMask, visible && styles.drawerOpen)}
+        className={clsx(styles.drawerMask, open && styles.drawerOpen)}
         onClick={closeMobileSider}
       />
       <div

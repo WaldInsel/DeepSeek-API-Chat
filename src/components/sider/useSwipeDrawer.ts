@@ -8,8 +8,8 @@ import {
 
 /** 从屏幕左侧多宽以内起手，直接算在拉出侧边栏（避开安卓系统返回手势的触发带） */
 const EDGE_WIDTH = 40
-/** 横向移动超过这个距离才接管手势，避免误伤点击和纵向滚动 */
-const ACTIVATE_DISTANCE = 12
+/** 横向移动超过这个距离就接管手势；阈值很小，手一动抽屉就开始跟手 */
+const ACTIVATE_DISTANCE = 6
 /** 关闭态拖过这个比例就打开，留一点回弹区间 */
 const OPEN_AT = 0.3
 /** 打开态拖到这个比例以下就关闭 */
@@ -167,8 +167,8 @@ export const useSwipeDrawer = (enabled: boolean) => {
       } else {
         shouldOpen = state.open ? state.progress > CLOSE_AT : state.progress > OPEN_AT
       }
-      // 先恢复 CSS 过渡，下一帧再落到终点，否则位移和过渡同帧切换会没有动画
-      useMobileSider.setState({ dragging: false })
+      // 松手后保持 dragging 到下一帧：抽屉靠它维持挂载，落点时再恢复过渡，
+      // 否则位移和过渡同帧切换会没有动画，还会让拖动中的抽屉提前卸载
       requestAnimationFrame(() => {
         if (shouldOpen) {
           openMobileSider()

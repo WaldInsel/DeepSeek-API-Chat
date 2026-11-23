@@ -86,6 +86,10 @@
 .thinkingViewport {
   max-height: 240px;
   padding-right: 4px;
+}
+
+/* 内容确实超限时才接管滚动；短内容不设 overflow，手指和滚轮照常交给页面 */
+.thinkingViewportScrollable {
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;

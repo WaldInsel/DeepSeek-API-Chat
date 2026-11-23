@@ -290,6 +290,28 @@ const ThinkingViewport = ({
   children: ReactNode
 }) => {
   const viewportRef = useRef<HTMLDivElement>(null)
+  const [scrollable, setScrollable] = useState(false)
+  // 只有内容真的超过限高才变成独立滚动区；短内容保留普通布局，
+  // 否则 overflow + overscroll-contain 会吃掉滚动链，让页面滑不动
+  useEffect(() => {
+    if (mode !== 'partial') {
+      setScrollable(false)
+      return
+    }
+    const element = viewportRef.current
+    if (!element) {
+      return
+    }
+    const update = () => setScrollable(element.scrollHeight > element.clientHeight + 1)
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(element)
+    for (const child of Array.from(element.children)) {
+      observer.observe(child)
+    }
+    return () => observer.disconnect()
+  }, [mode, text])
+
   useEffect(() => {
     if (mode !== 'partial' || !active) {
       return
@@ -313,7 +335,10 @@ const ThinkingViewport = ({
     return <>{children}</>
   }
   return (
-    <div ref={viewportRef} className={styles.thinkingViewport}>
+    <div
+      ref={viewportRef}
+      className={clsx(styles.thinkingViewport, scrollable && styles.thinkingViewportScrollable)}
+    >
       {children}
     </div>
   )
