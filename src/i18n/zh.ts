@@ -143,6 +143,18 @@ export const zh = {
   pluginNsfwLabel: 'NSFW 创作模式',
   pluginNsfwDescription:
     '开启后，在每次请求的 System 最前面注入 18+ 虚构创作总纲，角色与场景设定优先于通用助手规范。',
+  pluginPersonaLabel: '人格与文风',
+  pluginPersonaDescription:
+    '开启后，在每次请求的 System 最前面注入你设定的人格，用来调整回复的语气、情感与角色。',
+  pluginPersonaPlaceholder:
+    '例如：你是「小满」，一个说话很轻的陪伴者。短句为主，先接住情绪再谈事情，不评判、不说教。',
+  pluginPresetLabel: '套用预设',
+  pluginPersonaPresetGentle: '温柔陪伴',
+  pluginPersonaPresetSharp: '毒舌损友',
+  pluginPersonaPresetAcademic: '学术导师',
+  pluginPersonaPresetAncient: '古风角色',
+  pluginPersonaPresetListener: '情感树洞',
+  pluginPersonaPresetEngineer: '极简工程师',
   pluginPurgeLabel: '拒答兜底模式',
   pluginPurgeDescription:
     '开启后，在每次请求的 System 末尾追加兜底规则，可以压掉首轮的推脱、免责声明与自我弱化。',

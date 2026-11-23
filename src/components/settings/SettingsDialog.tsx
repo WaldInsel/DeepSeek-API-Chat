@@ -31,7 +31,7 @@ import {
   type ThinkingCollapse,
 } from '../../services/settings.js'
 import { useTranslate, type TranslationKey, type TranslationMessage } from '../../i18n/index.js'
-import { plugins, type PromptPlugin } from '../../plugins/index.js'
+import { plugins, type PluginPreset, type PromptPlugin } from '../../plugins/index.js'
 import { Button } from '../base/Button.js'
 import { IconButton } from '../base/IconButton.js'
 import { Modal } from '../base/Modal.js'
@@ -409,8 +409,9 @@ const readConfigText = (config: Record<string, unknown> | undefined): string =>
 /**
  * 编辑插件正文。
  *
- * 三个插件共用这一个弹窗：正文来自 config.text，没改过时显示 defaultText。
+ * 所有插件共用这一个弹窗：正文来自 config.text，没改过时显示 defaultText。
  * 保存时若与内置正文一致就写入空字符串，让插件继续回退到内置正文，避免固化旧版本。
+ * 插件在 ui.presets 里声明预设时，顶部出现预设按钮，点一下把正文填进输入框。
  */
 const PluginPromptDialog = ({
   open,
@@ -420,6 +421,7 @@ const PluginPromptDialog = ({
   initialText,
   hint,
   placeholder,
+  presets,
   onClose,
 }: {
   open: boolean
@@ -429,6 +431,7 @@ const PluginPromptDialog = ({
   initialText: string
   hint: string
   placeholder?: string
+  presets?: readonly PluginPreset[]
   onClose: () => void
 }) => {
   const t = useTranslate()
@@ -468,6 +471,23 @@ const PluginPromptDialog = ({
         </>
       }
     >
+      {presets && presets.length > 0 ? (
+        <div className={styles.pluginPresets}>
+          <div className={styles.pluginPresetsLabel}>{t('pluginPresetLabel')}</div>
+          <div className={styles.pluginPresetList}>
+            {presets.map((preset) => (
+              <button
+                key={preset.id}
+                type="button"
+                className={styles.pluginPresetButton}
+                onClick={() => setText(preset.text)}
+              >
+                {t(preset.labelKey as TranslationKey)}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
       <textarea
         className={styles.pluginTextarea}
         value={text}
@@ -536,6 +556,7 @@ const PluginToggleCell = ({ plugin }: { plugin: PromptPlugin }) => {
           initialText={initialText}
           hint={t(hintKey)}
           placeholder={placeholderKey ? t(placeholderKey) : undefined}
+          presets={plugin.ui?.presets}
           onClose={() => setEditorOpen(false)}
         />
       ) : null}
