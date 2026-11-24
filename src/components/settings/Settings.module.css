@@ -664,6 +664,17 @@
   font-size: 0.75rem;
 }
 
+.memoryAutoRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+
+  /* 开关与两行文案垂直居中一点，不与标题顶端对齐 */
+  > :first-child {
+    margin-top: 2px;
+  }
+}
+
 .memoryNoteInput {
   display: flex;
   align-items: flex-end;

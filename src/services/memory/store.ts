@@ -56,9 +56,11 @@ export interface MemoryState {
   notes: readonly MemoryNote[]
   watermarks: Readonly<Record<string, SessionWatermark>>
   activity: Readonly<Record<string, SessionActivity>>
-  /** 连续失败次数，成功后清零；连续 3 次暂停自动整理在第三步接 */
+  /** 连续失败次数，成功后清零；连续 3 次暂停自动整理，手动整理可解除 */
   failures: number
   lastDerivedAt: number
+  /** 用户关掉自动整理时只留手动触发；默认开启，与插件开关相互独立 */
+  autoEnabled: boolean
 }
 
 const emptyState = (): MemoryState => ({
@@ -67,6 +69,7 @@ const emptyState = (): MemoryState => ({
   activity: {},
   failures: 0,
   lastDerivedAt: 0,
+  autoEnabled: true,
 })
 
 const readItem = (key: string): string | null => {
@@ -164,6 +167,8 @@ export const readMemoryState = (): MemoryState => {
       activity: parseActivity(parsed.activity),
       failures: asCount(parsed.failures),
       lastDerivedAt: asCount(parsed.lastDerivedAt),
+      // 缺字段按开启：老数据里没有这一项，不该让自动整理莫名关掉
+      autoEnabled: parsed.autoEnabled !== false,
     }
   } catch {
     return emptyState()
@@ -179,8 +184,14 @@ export const writeMemoryState = (state: MemoryState): void => {
       activity: state.activity,
       failures: state.failures,
       lastDerivedAt: state.lastDerivedAt,
+      autoEnabled: state.autoEnabled,
     })
   )
+}
+
+/** 自动整理开关；与插件开关分开：关掉它仍然可以手动整理 */
+export const setMemoryAutoEnabled = (autoEnabled: boolean): void => {
+  writeMemoryState({ ...readMemoryState(), autoEnabled })
 }
 
 /** 读当前档案；没有或坏数据时给一份空档案 */
@@ -232,6 +243,30 @@ export const addMemoryNote = (text: string, now: number): MemoryNote | null => {
   const state = readMemoryState()
   writeMemoryState({ ...state, notes: [...state.notes, note] })
   return note
+}
+
+/**
+ * 忘掉一个会话的水位与活动记录。
+ *
+ * 删会话时必须调：留着旧记录会让「最近聊过的会话」选中一个已经不存在的 id，
+ * 启动追赶整理它只会回 `no-session`，追赶就此卡死，别的会话的积压永远补不上。
+ */
+export const forgetSession = (sessionId: string): void => {
+  const state = readMemoryState()
+  // 用过滤而不是 delete：动态键删除会把这些对象推进字典模式，oxlint 也禁这一手
+  const watermarks = Object.fromEntries(
+    Object.entries(state.watermarks).filter(([id]) => id !== sessionId)
+  )
+  const activity = Object.fromEntries(
+    Object.entries(state.activity).filter(([id]) => id !== sessionId)
+  )
+  if (
+    Object.keys(watermarks).length === Object.keys(state.watermarks).length &&
+    Object.keys(activity).length === Object.keys(state.activity).length
+  ) {
+    return
+  }
+  writeMemoryState({ ...state, watermarks, activity })
 }
 
 /** 清空全部记忆：档案与状态一起删，会话消息一条不动 */

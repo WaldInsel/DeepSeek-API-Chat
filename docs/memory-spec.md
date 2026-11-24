@@ -150,16 +150,28 @@ interface Profile {
 
 - 好测试 = 通过 public interface 验证 behavior，不 mock 内部协作者、不测私有函数。
   项目现有唯一 prior art 是 `src/plugins/registry.test.ts`：只断言公开契约，不断言插件正文文案。
-- **只测两个 seam**：
+- **只测三个 seam**（第三步新增 C，理由见下）：
 
 | Seam | 位置 | 能捕获 | 会漏掉 |
 | --- | --- | --- | --- |
 | A. `composeSystemPrompt`（已有） | `src/plugins/index.ts` | 记忆块出现在原文之后、空档案不注入、内置档不受高级模式门禁、社区插件跳过逻辑不回归 | 请求体里块的真实位置、prompt cache 是否命中 |
-| B. 冷路径入口（新增） | `src/services/memory/index.ts`，签名形如 `deriveProfile({ profile, notes, turns, send })`，`send` 由调用方注入 | 坏 JSON 保留旧档案且水位不动、失败计数 +1、重试一次、三段超限被压、便条必须逐条回应 | 真实 `deepseek-flash` 的输出稳定性、调度时机 |
+| B. 冷路径入口（新增） | `src/services/memory/index.ts`，签名形如 `deriveProfile({ profile, notes, turns, send })`，`send` 由调用方注入 | 坏 JSON 保留旧档案且水位不动、失败计数 +1、重试一次、三段超限被压、便条必须逐条回应 | 真实 `deepseek-flash` 的输出稳定性 |
+| C. 调度入口（新增，第三步） | `src/services/memory/scheduler.ts` 的两个公开导出：`decideAuto(trigger, snapshot, now)`（判据）与 `createScheduler({ target, snapshot, derive, autoEnabled })`（时序）；`derive` 与 `autoEnabled` 由调用方注入 | 三条件各自的临界值与取或、连点两次不并发、追一批失败就停、切会话后目标锁定、退避只停自动不停手动 | 真实定时器时机、真实 IndexedDB 读取、人工验收的四条 |
 
-- `send` 作为参数注入而不是模块内 import，是为了让 B 不需要网络就能测。
+- `send` / `derive` / `autoEnabled` 作为参数注入而不是模块内 import，是为了让 B 与 C 都不需要网络与存储就能测。
 - 水位下界守卫作为 B 的一部分测（同一次调用内传入超界 `processedCount`）。
+- **为什么承认 C 是第三个 seam**：第二步的 B 表里「会漏掉」一栏原本写着「调度时机」。
+  第三步做的就是调度时机，如果它继续不可测，那这一整步的正确性只能靠肉眼验收 ——
+  而「连点两次会不会并发两个请求」这类时序缺陷恰恰是肉眼最容易放过的一种。
+  C 只依赖注入的函数，不引入 DOM、定时器或 fake timer，代价有一个测试文件。
+  `decideAuto()` 单独测而不是只经由 `createScheduler()`：三个触发条件是 spec 正文里的
+  哪三条，`createScheduler()` 的时序用例读不出来。它接的是纯数据、给的是纯结果，
+  不是「某个内部步骤」，所以不违反「不测私有函数」。
 - 不写 UI 测试：项目没有 React 测试设施，为这件事引入不划算。
+- **上表「会漏掉」一栏里的每一项，都要回答「那么它由什么保证」**。答「肉眼验收」的，
+  必须在 ticket 里写成一条可复现的操作步骤（在哪个页面点什么、看哪个数、期望什么值），
+  而不是一句「人肉眼验收」。原因：B 表原本把「调度时机」归入「会漏掉」，等于预先判定
+  第三步不可测 —— 而「连点两次会不会并发两个请求」恰恰是肉眼最容易放过的那一类缺陷。
 
 ## 验收
 

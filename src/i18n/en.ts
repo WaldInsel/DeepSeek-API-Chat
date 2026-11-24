@@ -198,6 +198,11 @@ export const en = {
   pluginMemoryNoSession: 'Open a conversation before consolidating',
   pluginMemoryNothingPending: 'Nothing to consolidate yet',
   pluginMemoryCleared: 'Memory cleared',
+  pluginMemoryAutoLabel: 'Consolidate automatically',
+  pluginMemoryAutoDescription:
+    'Consolidates in the background every 8 turns, or 5 minutes after you stop chatting; catches up on unprocessed turns when you open the app. Off means manual only.',
+  pluginMemoryAutoPaused:
+    'Automatic consolidation paused after repeated failures. Hit Consolidate now once to resume.',
 
   pluginSectionBuiltin: 'Built-in plugins',
   pluginSectionCommunity: 'Unofficial plugins',

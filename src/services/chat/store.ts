@@ -10,7 +10,8 @@ import { cancelUpload, describeUploadError, uploadAttachment, useUploads } from 
 import { useSettings } from '../settings.js'
 import { withMemoryProfile } from '../memory/profile.js'
 import { collectTurns } from '../memory/turns.js'
-import { noteSessionActivity } from '../memory/store.js'
+import { forgetSession, noteSessionActivity } from '../memory/store.js'
+import { requestAutoMemory } from '../memory/scheduler.js'
 import { useAdvancedMode } from '../advancedMode.js'
 import { translate } from '../../i18n/index.js'
 import {
@@ -337,6 +338,8 @@ export const initChat = (): Promise<void> => {
       const summaries = await db.loadSessionSummaries()
       if (epoch === historyEpoch) {
         set({ ready: true, sessions: sortSessions(summaries) })
+        // 启动追赶：上次关标签页时没整理的轮次在这里补上（页面级定时器已随页面销毁，指望不上）
+        requestAutoMemory('opened')
       }
     } catch (error) {
       if (epoch === historyEpoch) {
@@ -503,6 +506,8 @@ export const selectSession = (id: string) => {
     touchSession(id)
     set({ activeId: id })
     void ensureSessionLoaded(id)
+    // 切会话追赶：切过去就把这个会话没整理完的轮次补上（含从缓存里直接切的情况）
+    requestAutoMemory('opened')
     trimSessionCache()
   }
 }
@@ -650,6 +655,8 @@ const removeSessionData = async (id: string): Promise<boolean> => {
       activeId: state.activeId === id ? null : state.activeId,
     }))
     removePinnedSession(id)
+    // 记忆里也忘掉这个会话：否则「最近聊过的会话」会选中一个已删除的 id
+    forgetSession(id)
     return true
   } catch (error) {
     db.reportStorageError('delete session')(error)
@@ -1234,6 +1241,8 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
     const finished = getSession(sessionId)
     if (finished) {
       noteSessionActivity(sessionId, collectTurns(finished).length, Date.now())
+      // 主路径：聊够 8 轮就跑一次。发出即返回，不挡首字，也不挡这一轮的收尾
+      requestAutoMemory('turns')
     }
   }
 }

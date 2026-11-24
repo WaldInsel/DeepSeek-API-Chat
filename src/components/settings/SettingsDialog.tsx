@@ -41,9 +41,11 @@ import {
   clearMemory,
   readMemoryProfile,
   readMemoryState,
+  setMemoryAutoEnabled,
   type MemoryNote,
 } from '../../services/memory/store.js'
-import { deriveMemoryForSession } from '../../services/memory/run.js'
+import { isAutoPaused, requestAutoMemory } from '../../services/memory/scheduler.js'
+import { requestManualMemory } from '../../services/memory/run.js'
 import { copyText } from '../../utils/clipboard.js'
 import { Button } from '../base/Button.js'
 import { IconButton } from '../base/IconButton.js'
@@ -597,6 +599,20 @@ const PluginPromptDialog = ({
 }
 
 /**
+ * 手动整理被挡住时的提示。`busy` 不算错误：自动整理正跑着，等它跑完就自然好了。
+ */
+const BLOCKED_TOAST: Record<
+  'no-key' | 'no-session' | 'busy' | 'unexpected',
+  { readonly key: TranslationKey; readonly type?: 'error' }
+> = {
+  'no-key': { key: 'pluginMemoryDeriveNoKey', type: 'error' },
+  'no-session': { key: 'pluginMemoryNoSession', type: 'error' },
+  // 自动整理正跑着：不是错误，等它跑完就好
+  busy: { key: 'pluginMemoryDeriving' },
+  unexpected: { key: 'pluginMemoryDeriveFailed', type: 'error' },
+}
+
+/**
  * 记忆档案弹窗：**只读**档案 + 便条输入 + 三个动作。
  *
  * spec《便条》的立场：用户不能直接改档案。直接改会和下次重写打架 —— 用户改掉的一句，
@@ -618,17 +634,21 @@ const MemoryProfileDialog = ({
   onClose: () => void
 }) => {
   const t = useTranslate()
-  // 订阅而不是 getState()：整理打的是「当前这个会话」，切了会话就得跟着变
-  const sessionId = useChatStore((state) => state.activeId)
+  // 不再订阅 activeId：调度器在真正发起整理的那一刻现取「当前会话」，切了也不会打错
   const [busy, setBusy] = useState(false)
   const [profileText, setProfileText] = useState('')
   const [notes, setNotes] = useState<readonly MemoryNote[]>([])
   const [draft, setDraft] = useState('')
+  const [autoEnabled, setAutoEnabled] = useState(true)
+  const [failures, setFailures] = useState(0)
   const { mounted, visible } = usePresence(open)
 
   const reload = () => {
+    const memory = readMemoryState()
     setProfileText(renderProfileSections(readMemoryProfile()))
-    setNotes(readMemoryState().notes)
+    setNotes(memory.notes)
+    setAutoEnabled(memory.autoEnabled)
+    setFailures(memory.failures)
   }
   useEffect(() => {
     if (open) {
@@ -642,12 +662,9 @@ const MemoryProfileDialog = ({
     }
     setBusy(true)
     try {
-      const result = await deriveMemoryForSession(sessionId)
+      const result = await requestManualMemory()
       if (result.blocked !== undefined) {
-        showToast({
-          key: result.blocked === 'no-key' ? 'pluginMemoryDeriveNoKey' : 'pluginMemoryNoSession',
-          type: 'error',
-        })
+        showToast(BLOCKED_TOAST[result.blocked])
       } else if (result.outcome.status === 'updated') {
         showToast({ key: 'pluginMemoryDerived' })
       } else if (result.outcome.status === 'failed') {
@@ -655,6 +672,7 @@ const MemoryProfileDialog = ({
       } else {
         showToast({ key: 'pluginMemoryNothingPending' })
       }
+      // 手动整理成功会清零失败计数，退避随之解除 —— 重读一次让提示立刻消失
       reload()
     } finally {
       setBusy(false)
@@ -730,6 +748,27 @@ const MemoryProfileDialog = ({
       ) : (
         <div className={styles.pluginDescription}>{t('pluginMemoryNotesEmpty')}</div>
       )}
+      <div className={styles.memoryAutoRow}>
+        <Switch
+          aria-label={t('pluginMemoryAutoLabel')}
+          checked={autoEnabled}
+          onChange={(enabled) => {
+            setMemoryAutoEnabled(enabled)
+            setAutoEnabled(enabled)
+            // 刚打开时立刻试一次：不用等到攒够 8 轮或等满 5 分钟空闲
+            if (enabled) {
+              requestAutoMemory('opened')
+            }
+          }}
+        />
+        <div>
+          <div className={styles.pluginSectionTitle}>{t('pluginMemoryAutoLabel')}</div>
+          <div className={styles.pluginDescription}>{t('pluginMemoryAutoDescription')}</div>
+        </div>
+      </div>
+      {isAutoPaused(failures) ? (
+        <div className={styles.pluginDescription}>{t('pluginMemoryAutoPaused')}</div>
+      ) : null}
       <div className={styles.memoryNoteInput}>
         <textarea
           className={styles.pluginTextarea}
@@ -766,11 +805,21 @@ const PluginToggleCell = ({ plugin }: { plugin: PromptPlugin }) => {
   const profileEditor = plugin.ui?.editor === 'profile'
   const tooltipKey = (plugin.ui?.tooltipKey ?? 'pluginPromptEditNamed') as TranslationKey
   const [profileOpen, setProfileOpen] = useState(false)
+  /**
+   * 自动整理被暂停时在插件行上直说。
+   *
+   * spec 要求「在设置页提示」，只藏在档案弹窗里等于没说：不点进去的人不知道自己被暂停了。
+   * 这里在渲染时读一次本地状态（不订阅）：设置页每次打开都会重新挂载，够新；
+   * 停在设置页期间正好被暂停的概率很低，那一点旧值不值得为它引入一套订阅。
+   */
+  const showPaused = profileEditor && isAutoPaused(readMemoryState().failures)
   return (
     <>
       <SettingCell
         label={label}
-        description={descriptionKey ? t(descriptionKey) : null}
+        description={
+          showPaused ? t('pluginMemoryAutoPaused') : descriptionKey ? t(descriptionKey) : null
+        }
         status={null}
         action={
           <div className={styles.pluginActions}>

@@ -193,6 +193,10 @@ export const zh = {
   pluginMemoryNoSession: '先打开一个会话再整理',
   pluginMemoryNothingPending: '没有待整理的轮次',
   pluginMemoryCleared: '记忆已清空',
+  pluginMemoryAutoLabel: '自动整理',
+  pluginMemoryAutoDescription:
+    '聊够 8 轮、或停止聊天 5 分钟后在后台整理；打开应用时补上没整理的轮次。关掉后只能手动整理。',
+  pluginMemoryAutoPaused: '连续整理失败，已暂停自动整理。点「立即整理」试一次即可恢复。',
 
   pluginSectionBuiltin: '内置插件',
   pluginSectionCommunity: '非官方插件',

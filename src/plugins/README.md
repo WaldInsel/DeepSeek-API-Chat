@@ -41,9 +41,9 @@ src/plugins/
 ### memory 的额外约定
 
 - **档案不在 `config` 里**：`memory` 的档案单独存在
-  `localStorage['deepseek-api-chat:memory-profile']`，控制数据（便条 / 水位 / 失败计数）另存
-  `localStorage['deepseek-api-chat:memory-state']`。设置页只读展示它，不走 `config.text`，
-  避免一份 JSON 里挤出第二套写入路径。
+  `localStorage['deepseek-api-chat:memory-profile']`，控制数据（便条 / 水位 / 失败计数 /
+  自动整理开关）另存 `localStorage['deepseek-api-chat:memory-state']`。设置页只读展示它，
+  不走 `config.text`，避免一份 JSON 里挤出第二套写入路径。
 - **用户不直接改档案**：设置页只有「复制档案 / 立即整理 / 清空全部记忆」三个动作。发现记错时
   写一张**便条**（输入而非输出），下次整理必须逐条回应。直接让用户编辑档案会和下次重写打架：
   用户改掉的一句，模型重写时可能又丢回去。
@@ -53,6 +53,13 @@ src/plugins/
   `withMemoryProfile(settings.pluginSettings)` 同步读一次档案挂到 `memory.config` 上，
   插件本身仍然不碰 localStorage。每轮回答结束的收尾处（`streamReply` 的 `finally`）另记一次
   会话活动，**不挂 `persist()`** —— 那是「任何变更都存盘」的通用出口，编辑、切版本、切分支都会走它。
+- **自动整理**：`src/services/memory/scheduler.ts` 只有判据、单飞锁与退避，不碰网络与存储。
+  三个触发点由宿主投喂：回答收尾（`turns`，未处理 ≥ 8 轮）、空闲定时器（`idle`，停聊 5 分钟
+  且未处理 ≥ 1）、打开应用或切会话（`opened`，未处理 ≥ 1 就补）。定时器只活在本次页面打开
+  期间，隔天重开靠 `opened` 追赶，因此目标会话取「当前会话，欢迎页则取最近聊过的那个」；
+  已删除的会话不算目标（删会话时 `forgetSession()` 一并清掉它的水位与活动记录），
+  否则追赶会打在一个不存在的会话上、每次都被 `no-session` 挡回来。
+  连续失败 3 次暂停自动整理（手动「立即整理」成功即解除），失败期间读侧照常注入旧档案。
 - **记忆不跨端**：Web / Tauri / Capacitor 各存一份 localStorage，换端后记忆为空。
 - **记忆不抢人格**：档案只写事实，语气、文风、称呼归 `persona`。两个插件同时开时
   `memory` 只能出现在 `CUSTOM` 之后，不参与开篇的角色设定。
@@ -103,7 +110,7 @@ interface PluginState {
 
 ## 宿主挂钩点
 
-只有一处：`src/services/chat/store.ts` 组装请求时调用
+**注入**只有一处：`src/services/chat/store.ts` 组装请求时调用
 
 ```ts
 const pluginStates = withMemoryProfile(settings.pluginSettings)
@@ -111,6 +118,11 @@ composeSystemPrompt(SYSTEM_PROMPT, messages, pluginStates, {
   advanced: useAdvancedMode.getState().enabled,
 })
 ```
+
+**调度**另有三处触发（都不是第二套注入，也不改请求体）：
+回答收尾的 `finally`（`turns`）、`initChat` 读完列表后与 `selectSession` 切换会话后
+（都是 `opened`）、`run.ts` 里的空闲定时器（`idle`）。三处都调 `requestAutoMemory()`，
+调度器没接线时是空操作，所以插件关掉、或测试环境里没有 DOM，都不会影响回答流程。
 
 `withMemoryProfile` 只做一件事：`memory` 开关打开时，把宿主读到的档案（加上寄存给的
 「现在」）挂到 `memory.config` 上；其它插件的状态原样透传。它属于同一处挂钩，不是第二处。

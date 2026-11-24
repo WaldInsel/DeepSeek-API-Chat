@@ -40,6 +40,7 @@ declare const styles: {
   readonly "memoryNotes": string;
   readonly "memoryNote": string;
   readonly "memoryNoteReply": string;
+  readonly "memoryAutoRow": string;
   readonly "memoryNoteInput": string;
   readonly "importProgress": string;
   readonly "importProgressTrack": string;
