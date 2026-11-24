@@ -9,6 +9,8 @@ import { extractFileIds, getFileErrorCode, isRetryableApiError } from '../api/er
 import { cancelUpload, describeUploadError, uploadAttachment, useUploads } from '../attachments.js'
 import { useSettings } from '../settings.js'
 import { withMemoryProfile } from '../memory/profile.js'
+import { collectTurns } from '../memory/turns.js'
+import { noteSessionActivity } from '../memory/store.js'
 import { useAdvancedMode } from '../advancedMode.js'
 import { translate } from '../../i18n/index.js'
 import {
@@ -1226,5 +1228,12 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
       ),
     }))
     persist(sessionId)
+    // 记忆的活动记录挂在这里，不挂 persist：persist 是「任何变更都存盘」的通用出口，
+    // 编辑、切版本、切分支都会走它，拿它当「又完成一轮」是错的。这里必然执行，轮次不会丢。
+    // 传 collectTurns 的口径（与水位同一把尺子），不传原始可见条数。
+    const finished = getSession(sessionId)
+    if (finished) {
+      noteSessionActivity(sessionId, collectTurns(finished).length, Date.now())
+    }
   }
 }

@@ -22,7 +22,6 @@ export const memoryPlugin: PromptPlugin = {
     descriptionKey: 'pluginMemoryDescription',
     hintKey: 'pluginMemoryHint',
     tooltipKey: 'pluginMemoryEdit',
-    placeholderKey: 'pluginMemoryPlaceholder',
     // 档案不住在 config.text 里，所以不是 editable：那个字段专指「正文可从设置页改写」
     editor: 'profile',
   },

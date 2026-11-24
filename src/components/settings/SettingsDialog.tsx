@@ -1,6 +1,7 @@
 import clsx from 'clsx'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import {
+  IconCopyOutline16,
   IconDataOutline16,
   IconDownloadOutline16,
   IconEditOutline16,
@@ -34,12 +35,16 @@ import {
 } from '../../services/settings.js'
 import { useTranslate, type TranslationKey, type TranslationMessage } from '../../i18n/index.js'
 import { plugins, type PluginPreset, type PromptPlugin } from '../../plugins/index.js'
+import { renderProfileSections } from '../../plugins/memory/prompt.js'
 import {
-  parseProfileText,
+  addMemoryNote,
+  clearMemory,
   readMemoryProfile,
-  renderProfileText,
-  writeMemoryProfile,
-} from '../../services/memory/profile.js'
+  readMemoryState,
+  type MemoryNote,
+} from '../../services/memory/store.js'
+import { deriveMemoryForSession } from '../../services/memory/run.js'
+import { copyText } from '../../utils/clipboard.js'
 import { Button } from '../base/Button.js'
 import { IconButton } from '../base/IconButton.js'
 import { Modal } from '../base/Modal.js'
@@ -444,12 +449,6 @@ const errorStatus = (key: TranslationKey, error: unknown): Status => ({
 /** 插件正文的字符上限，只限制 UI 输入 */
 const PLUGIN_PROMPT_LIMIT = 4000
 
-/**
- * 档案字数上限，与注入侧的总字数上限一致。
- * 这里只用来提示，不强制：读侧不截断，超限由第二步的整理环节压。
- */
-const PROFILE_LIMIT = 1200
-
 const readConfigText = (config: Record<string, unknown> | undefined): string =>
   typeof config?.text === 'string' ? config.text : ''
 
@@ -598,47 +597,155 @@ const PluginPromptDialog = ({
 }
 
 /**
- * 记忆档案弹窗（第一步的临时形态）。
+ * 记忆档案弹窗：**只读**档案 + 便条输入 + 三个动作。
  *
- * 档案不存 pluginSettings：宿主给它单独一个 localStorage 键，所以这个弹窗自己读写，
- * 不走 config.text 那一条写入路径。粘进来的文本按三个段标题切成三段再存回去。
- * 骨架复用 PluginTextDialog，只有取值与落盘两处不同。
+ * spec《便条》的立场：用户不能直接改档案。直接改会和下次重写打架 —— 用户改掉的一句，
+ * 模型重写时可能又丢回去，而且用户会以为自己改成功了。便条是**输入**不是**输出**，
+ * 不会丢：下次整理必须逐条回应。
+ *
+ * 三个动作：复制档案（只读视图的顺手操作，不构成写入路径）、立即整理、清空全部记忆。
+ * 整理进行中把按钮置灰，连点第二次直接返回，不并发两个整理。
  */
 const MemoryProfileDialog = ({
   open,
   title,
   hint,
-  placeholder,
   onClose,
 }: {
   open: boolean
   title: string
   hint: string
-  placeholder?: string
   onClose: () => void
-}) => (
-  <PluginTextDialog
-    open={open}
-    title={title}
-    hint={hint}
-    placeholder={placeholder}
-    limit={PROFILE_LIMIT}
-    readText={() => renderProfileText(readMemoryProfile())}
-    onSave={(text) => {
-      const previous = readMemoryProfile()
-      // 不截断：截断等于默默吃掉用户写的东西。超 1200 字由第二步的整理环节压
-      const parsed = parseProfileText(text)
-      // 只打开弹窗点确认不应刷新新鲜度，否则模型会把旧档案当新档案
-      const changed = renderProfileText(previous) !== renderProfileText(parsed)
-      writeMemoryProfile({
-        ...parsed,
-        updatedAt: changed ? Date.now() : previous.updatedAt,
-        turnsSeen: previous.turnsSeen,
-      })
-    }}
-    onClose={onClose}
-  />
-)
+}) => {
+  const t = useTranslate()
+  // 订阅而不是 getState()：整理打的是「当前这个会话」，切了会话就得跟着变
+  const sessionId = useChatStore((state) => state.activeId)
+  const [busy, setBusy] = useState(false)
+  const [profileText, setProfileText] = useState('')
+  const [notes, setNotes] = useState<readonly MemoryNote[]>([])
+  const [draft, setDraft] = useState('')
+  const { mounted, visible } = usePresence(open)
+
+  const reload = () => {
+    setProfileText(renderProfileSections(readMemoryProfile()))
+    setNotes(readMemoryState().notes)
+  }
+  useEffect(() => {
+    if (open) {
+      reload()
+    }
+  }, [open])
+
+  const derive = async () => {
+    if (busy) {
+      return
+    }
+    setBusy(true)
+    try {
+      const result = await deriveMemoryForSession(sessionId)
+      if (result.blocked !== undefined) {
+        showToast({
+          key: result.blocked === 'no-key' ? 'pluginMemoryDeriveNoKey' : 'pluginMemoryNoSession',
+          type: 'error',
+        })
+      } else if (result.outcome.status === 'updated') {
+        showToast({ key: 'pluginMemoryDerived' })
+      } else if (result.outcome.status === 'failed') {
+        showToast({ key: 'pluginMemoryDeriveFailed', type: 'error' })
+      } else {
+        showToast({ key: 'pluginMemoryNothingPending' })
+      }
+      reload()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const addNote = () => {
+    if (!addMemoryNote(draft, Date.now())) {
+      return
+    }
+    setDraft('')
+    reload()
+    showToast({ key: 'pluginMemoryNoteAdded' })
+  }
+
+  if (!mounted) {
+    return null
+  }
+  return (
+    <Modal
+      title={title}
+      className={styles.pluginDialog}
+      mainClassName={styles.pluginDialogMain}
+      state={visible ? 'open' : 'closed'}
+      onClose={onClose}
+      footer={
+        <>
+          <Button variant="outlined" size="m" onClick={onClose}>
+            {t('close')}
+          </Button>
+          <Button variant="outlined" size="m" disabled={busy} onClick={() => void derive()}>
+            {t(busy ? 'pluginMemoryDeriving' : 'pluginMemoryDeriveNow')}
+          </Button>
+          <Button
+            variant="dangerOutlined"
+            size="m"
+            disabled={busy}
+            onClick={() => {
+              clearMemory()
+              reload()
+              showToast({ key: 'pluginMemoryCleared' })
+            }}
+          >
+            {t('pluginMemoryClear')}
+          </Button>
+        </>
+      }
+    >
+      <div className={styles.pluginSectionTitle}>
+        <span>{t('pluginMemoryProfileTitle')}</span>
+        <IconButton
+          size="xs"
+          icon={<IconCopyOutline16 />}
+          tooltip={t('pluginMemoryCopyProfile')}
+          onClick={() => {
+            void copyText(profileText).then((ok) => {
+              showToast(ok ? { key: 'copied' } : { key: 'copyFailed', type: 'error' })
+            })
+          }}
+        />
+      </div>
+      <div className={styles.memoryProfile}>{profileText || t('pluginMemoryProfileEmpty')}</div>
+      <div className={styles.pluginSectionTitle}>{t('pluginMemoryNotesTitle')}</div>
+      {notes.length > 0 ? (
+        <ul className={styles.memoryNotes}>
+          {notes.map((note) => (
+            <li key={note.id} className={styles.memoryNote}>
+              <span>{note.text}</span>
+              {note.reply ? <span className={styles.memoryNoteReply}>{note.reply}</span> : null}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className={styles.pluginDescription}>{t('pluginMemoryNotesEmpty')}</div>
+      )}
+      <div className={styles.memoryNoteInput}>
+        <textarea
+          className={styles.pluginTextarea}
+          value={draft}
+          rows={2}
+          placeholder={t('pluginMemoryNotePlaceholder')}
+          onChange={(event) => setDraft(event.target.value)}
+        />
+        <Button size="m" disabled={busy || !draft.trim()} onClick={addNote}>
+          {t('pluginMemoryNoteAdd')}
+        </Button>
+      </div>
+      <div className={styles.pluginHint}>{hint}</div>
+    </Modal>
+  )
+}
 
 /**
  * 一个插件行：展示文案来自插件的 ui 元数据，开关与正文写在 pluginSettings 里。
@@ -701,7 +808,6 @@ const PluginToggleCell = ({ plugin }: { plugin: PromptPlugin }) => {
           open={profileOpen}
           title={t('pluginPromptDialogTitle', { name: label })}
           hint={t(hintKey)}
-          placeholder={placeholderKey ? t(placeholderKey) : undefined}
           onClose={() => setProfileOpen(false)}
         />
       ) : null}

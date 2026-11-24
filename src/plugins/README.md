@@ -41,11 +41,18 @@ src/plugins/
 ### memory 的额外约定
 
 - **档案不在 `config` 里**：`memory` 的档案单独存在
-  `localStorage['deepseek-api-chat:memory-profile']`。设置页的「查看与粘贴档案」自己读写，
-  不走 `config.text`，避免一份 JSON 里挤出第二套写入路径。
+  `localStorage['deepseek-api-chat:memory-profile']`，控制数据（便条 / 水位 / 失败计数）另存
+  `localStorage['deepseek-api-chat:memory-state']`。设置页只读展示它，不走 `config.text`，
+  避免一份 JSON 里挤出第二套写入路径。
+- **用户不直接改档案**：设置页只有「复制档案 / 立即整理 / 清空全部记忆」三个动作。发现记错时
+  写一张**便条**（输入而非输出），下次整理必须逐条回应。直接让用户编辑档案会和下次重写打架：
+  用户改掉的一句，模型重写时可能又丢回去。
+- **档案只有整理环节能写**：`src/services/memory/index.ts` 的 `deriveProfile()` 是唯一写入者，
+  `send` 由调用方注入，因此它不需要网络就能测。失败一律「旧档案不变、水位不推进、失败计数 +1」。
 - **宿主注入时机**：`src/services/chat/store.ts` 组装请求前用
   `withMemoryProfile(settings.pluginSettings)` 同步读一次档案挂到 `memory.config` 上，
-  插件本身仍然不碰 localStorage。
+  插件本身仍然不碰 localStorage。每轮回答结束的收尾处（`streamReply` 的 `finally`）另记一次
+  会话活动，**不挂 `persist()`** —— 那是「任何变更都存盘」的通用出口，编辑、切版本、切分支都会走它。
 - **记忆不跨端**：Web / Tauri / Capacitor 各存一份 localStorage，换端后记忆为空。
 - **记忆不抢人格**：档案只写事实，语气、文风、称呼归 `persona`。两个插件同时开时
   `memory` 只能出现在 `CUSTOM` 之后，不参与开篇的角色设定。
