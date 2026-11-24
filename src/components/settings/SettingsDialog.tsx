@@ -34,6 +34,12 @@ import {
 } from '../../services/settings.js'
 import { useTranslate, type TranslationKey, type TranslationMessage } from '../../i18n/index.js'
 import { plugins, type PluginPreset, type PromptPlugin } from '../../plugins/index.js'
+import {
+  parseProfileText,
+  readMemoryProfile,
+  renderProfileText,
+  writeMemoryProfile,
+} from '../../services/memory/profile.js'
 import { Button } from '../base/Button.js'
 import { IconButton } from '../base/IconButton.js'
 import { Modal } from '../base/Modal.js'
@@ -257,7 +263,6 @@ const useHistoryDelete = () => {
   }
 }
 
-
 const LocaleSetting = () => {
   const t = useTranslate()
   const locale = useSettings((state) => state.locale)
@@ -439,50 +444,56 @@ const errorStatus = (key: TranslationKey, error: unknown): Status => ({
 /** 插件正文的字符上限，只限制 UI 输入 */
 const PLUGIN_PROMPT_LIMIT = 4000
 
+/**
+ * 档案字数上限，与注入侧的总字数上限一致。
+ * 这里只用来提示，不强制：读侧不截断，超限由第二步的整理环节压。
+ */
+const PROFILE_LIMIT = 1200
+
 const readConfigText = (config: Record<string, unknown> | undefined): string =>
   typeof config?.text === 'string' ? config.text : ''
 
-
 /**
- * 编辑插件正文。
+ * 插件文本弹窗的骨架：Modal + 可选预设按钮 + textarea + 计数器 + 提示。
  *
- * 所有插件共用这一个弹窗：正文来自 config.text，没改过时显示 defaultText。
- * 保存时若与内置正文一致就写入空字符串，让插件继续回退到内置正文，避免固化旧版本。
- * 插件在 ui.presets 里声明预设时，顶部出现预设按钮，点一下把正文填进输入框。
+ * 取值与落盘由调用方给：正文弹窗落进 config.text，「记忆」落进自己的 localStorage 键。
+ * 骨架只负责一致性（同样的边框、计数器、提示位置），不假设正文存在哪。
  */
-const PluginPromptDialog = ({
+const PluginTextDialog = ({
   open,
-  name,
   title,
-  builtin,
-  initialText,
   hint,
   placeholder,
   presets,
+  limit = PLUGIN_PROMPT_LIMIT,
+  readText,
+  onSave,
   onClose,
 }: {
   open: boolean
-  name: string
   title: string
-  builtin: string
-  initialText: string
   hint: string
   placeholder?: string
   presets?: readonly PluginPreset[]
+  limit?: number
+  readText: () => string
+  onSave: (text: string) => void
   onClose: () => void
 }) => {
   const t = useTranslate()
   const { mounted, visible } = usePresence(open)
-  const [text, setText] = useState(initialText)
+  // 进 ref 而不是进依赖数组：readText 每次渲染都是新闭包，直接进依赖会让用户打字被覆盖
+  const readRef = useRef(readText)
+  readRef.current = readText
+  const [text, setText] = useState(() => readRef.current())
   useEffect(() => {
     if (open) {
-      setText(initialText)
+      setText(readRef.current())
     }
-  }, [open, initialText])
+  }, [open])
   if (!mounted) {
     return null
   }
-  const builtinText = builtin.trim()
   return (
     <Modal
       title={title}
@@ -498,8 +509,7 @@ const PluginPromptDialog = ({
           <Button
             size="m"
             onClick={() => {
-              const trimmed = text.slice(0, PLUGIN_PROMPT_LIMIT).trim()
-              setPluginConfig(name, { text: trimmed === builtinText ? '' : trimmed })
+              onSave(text)
               onClose()
             }}
           >
@@ -528,7 +538,7 @@ const PluginPromptDialog = ({
       <textarea
         className={styles.pluginTextarea}
         value={text}
-        maxLength={PLUGIN_PROMPT_LIMIT}
+        maxLength={limit}
         placeholder={placeholder}
         autoFocus
         onChange={(event) => setText(event.target.value)}
@@ -536,13 +546,99 @@ const PluginPromptDialog = ({
       <div className={styles.pluginCounter}>
         {t('pluginCustomInstructionsCounter', {
           count: text.length,
-          limit: PLUGIN_PROMPT_LIMIT,
+          limit,
         })}
       </div>
       <div className={styles.pluginHint}>{hint}</div>
     </Modal>
   )
 }
+
+/**
+ * 编辑插件正文：正文来自 config.text，没改过时显示 defaultText。
+ * 保存时若与内置正文一致就写入空字符串，让插件继续回退到内置正文，避免固化旧版本。
+ */
+const PluginPromptDialog = ({
+  open,
+  name,
+  title,
+  builtin,
+  initialText,
+  hint,
+  placeholder,
+  presets,
+  onClose,
+}: {
+  open: boolean
+  name: string
+  title: string
+  builtin: string
+  initialText: string
+  hint: string
+  placeholder?: string
+  presets?: readonly PluginPreset[]
+  onClose: () => void
+}) => {
+  const builtinText = builtin.trim()
+  return (
+    <PluginTextDialog
+      open={open}
+      title={title}
+      hint={hint}
+      placeholder={placeholder}
+      presets={presets}
+      readText={() => initialText}
+      onSave={(text) => {
+        const trimmed = text.slice(0, PLUGIN_PROMPT_LIMIT).trim()
+        setPluginConfig(name, { text: trimmed === builtinText ? '' : trimmed })
+      }}
+      onClose={onClose}
+    />
+  )
+}
+
+/**
+ * 记忆档案弹窗（第一步的临时形态）。
+ *
+ * 档案不存 pluginSettings：宿主给它单独一个 localStorage 键，所以这个弹窗自己读写，
+ * 不走 config.text 那一条写入路径。粘进来的文本按三个段标题切成三段再存回去。
+ * 骨架复用 PluginTextDialog，只有取值与落盘两处不同。
+ */
+const MemoryProfileDialog = ({
+  open,
+  title,
+  hint,
+  placeholder,
+  onClose,
+}: {
+  open: boolean
+  title: string
+  hint: string
+  placeholder?: string
+  onClose: () => void
+}) => (
+  <PluginTextDialog
+    open={open}
+    title={title}
+    hint={hint}
+    placeholder={placeholder}
+    limit={PROFILE_LIMIT}
+    readText={() => renderProfileText(readMemoryProfile())}
+    onSave={(text) => {
+      const previous = readMemoryProfile()
+      // 不截断：截断等于默默吃掉用户写的东西。超 1200 字由第二步的整理环节压
+      const parsed = parseProfileText(text)
+      // 只打开弹窗点确认不应刷新新鲜度，否则模型会把旧档案当新档案
+      const changed = renderProfileText(previous) !== renderProfileText(parsed)
+      writeMemoryProfile({
+        ...parsed,
+        updatedAt: changed ? Date.now() : previous.updatedAt,
+        turnsSeen: previous.turnsSeen,
+      })
+    }}
+    onClose={onClose}
+  />
+)
 
 /**
  * 一个插件行：展示文案来自插件的 ui 元数据，开关与正文写在 pluginSettings 里。
@@ -560,6 +656,9 @@ const PluginToggleCell = ({ plugin }: { plugin: PromptPlugin }) => {
   const builtin = plugin.defaultText ?? ''
   const initialText = readConfigText(state?.config) || builtin
   const editable = plugin.ui?.editable === true
+  const profileEditor = plugin.ui?.editor === 'profile'
+  const tooltipKey = (plugin.ui?.tooltipKey ?? 'pluginPromptEditNamed') as TranslationKey
+  const [profileOpen, setProfileOpen] = useState(false)
   return (
     <>
       <SettingCell
@@ -568,12 +667,12 @@ const PluginToggleCell = ({ plugin }: { plugin: PromptPlugin }) => {
         status={null}
         action={
           <div className={styles.pluginActions}>
-            {editable ? (
+            {editable || profileEditor ? (
               <IconButton
                 size="xs"
                 icon={<IconEditOutline16 />}
-                tooltip={t('pluginPromptEditNamed', { name: label })}
-                onClick={() => setEditorOpen(true)}
+                tooltip={t(tooltipKey, { name: label })}
+                onClick={() => (profileEditor ? setProfileOpen(true) : setEditorOpen(true))}
               />
             ) : null}
             <Switch
@@ -584,7 +683,7 @@ const PluginToggleCell = ({ plugin }: { plugin: PromptPlugin }) => {
           </div>
         }
       />
-      {editable ? (
+      {editable && !profileEditor ? (
         <PluginPromptDialog
           open={editorOpen}
           name={plugin.name}
@@ -595,6 +694,15 @@ const PluginToggleCell = ({ plugin }: { plugin: PromptPlugin }) => {
           placeholder={placeholderKey ? t(placeholderKey) : undefined}
           presets={plugin.ui?.presets}
           onClose={() => setEditorOpen(false)}
+        />
+      ) : null}
+      {profileEditor ? (
+        <MemoryProfileDialog
+          open={profileOpen}
+          title={t('pluginPromptDialogTitle', { name: label })}
+          hint={t(hintKey)}
+          placeholder={placeholderKey ? t(placeholderKey) : undefined}
+          onClose={() => setProfileOpen(false)}
         />
       ) : null}
     </>
@@ -733,7 +841,6 @@ const ImportHistory = ({
     />
   )
 }
-
 
 /** 读取 Blob 为 base64（Capacitor 的 Filesystem 只接受 base64 字符串） */
 const blobToBase64 = (blob: Blob) =>

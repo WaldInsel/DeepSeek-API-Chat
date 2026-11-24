@@ -149,8 +149,7 @@ export const en = {
   pluginCustomInstructionsLabel: 'Custom instructions',
   pluginCustomInstructionsDescription:
     'When enabled, your global instructions are appended to the end of the System prompt on every request, and DeepSeek follows them when carrying out the task.',
-  pluginCustomInstructionsPlaceholder:
-    'For example: lead with the conclusion, then explain why.',
+  pluginCustomInstructionsPlaceholder: 'For example: lead with the conclusion, then explain why.',
   pluginCustomInstructionsHint: 'Nothing is injected when this is empty.',
   pluginCustomInstructionsCounter: '{count} / {limit}',
 
@@ -175,6 +174,15 @@ export const en = {
   pluginPurgeLabel: 'Refusal fallback mode',
   pluginPurgeDescription:
     'When enabled, fallback rules are appended to the end of the System prompt, suppressing first-turn hedging, disclaimers, and self-softening.',
+
+  pluginMemoryLabel: 'Memory',
+  pluginMemoryDescription:
+    'When enabled, a cross-session profile (who the user is, preferences, work in progress) is appended to the end of the System prompt, so they do not have to repeat themselves.',
+  pluginMemoryHint:
+    'The profile stays on this device only and does not sync across platforms. Nothing is injected when this is empty. Section headings follow the injection format and are in Chinese.',
+  pluginMemoryPlaceholder:
+    '【我是谁】\nBackend engineer based in Beijing, mostly TypeScript.\n\n【偏好与禁忌】\nNo emoji.',
+  pluginMemoryEdit: 'View and paste profile',
 
   pluginSectionBuiltin: 'Built-in plugins',
   pluginSectionCommunity: 'Unofficial plugins',

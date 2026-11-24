@@ -8,6 +8,7 @@ import { currentChatModel } from '../chatMode.js'
 import { extractFileIds, getFileErrorCode, isRetryableApiError } from '../api/errors.js'
 import { cancelUpload, describeUploadError, uploadAttachment, useUploads } from '../attachments.js'
 import { useSettings } from '../settings.js'
+import { withMemoryProfile } from '../memory/profile.js'
 import { useAdvancedMode } from '../advancedMode.js'
 import { translate } from '../../i18n/index.js'
 import {
@@ -1123,12 +1124,14 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
         )
         const settings = useSettings.getState()
         const thinkingEffort = settings.thinkingEffort
+        // 记忆档案不住在插件状态里（插件不读 localStorage），宿主在这一处同步读出来挂上去
+        const pluginStates = withMemoryProfile(settings.pluginSettings)
         const events = streamMessage(
           settings.apiKey ?? '',
           {
             model: initial.model ?? currentChatModel(),
             // 编译期内置插件：按设置里的开关与配置组装 system（插件出错不影响请求；社区插件还受高级模式门禁）
-            system: composeSystemPrompt(SYSTEM_PROMPT, messages, settings.pluginSettings, {
+            system: composeSystemPrompt(SYSTEM_PROMPT, messages, pluginStates, {
               advanced: useAdvancedMode.getState().enabled,
             }),
             messages,

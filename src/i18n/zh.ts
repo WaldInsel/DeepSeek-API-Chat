@@ -142,7 +142,8 @@ export const zh = {
   pluginManagementEmptyTitle: '暂无插件',
   pluginManagementEmptyDescription: '插件会显示在这里。',
   pluginCustomInstructionsLabel: '自定义指令',
-  pluginCustomInstructionsDescription: '开启后，在每次请求的 System 末尾追加你的全局指令，DeepSeek 会根据你的指令执行对应任务。',
+  pluginCustomInstructionsDescription:
+    '开启后，在每次请求的 System 末尾追加你的全局指令，DeepSeek 会根据你的指令执行对应任务。',
   pluginCustomInstructionsPlaceholder: '例如：回答时先给结论，再解释原因。',
   pluginCustomInstructionsHint: '留空时不会注入任何内容。',
   pluginCustomInstructionsCounter: '{count} / {limit}',
@@ -169,6 +170,15 @@ export const zh = {
   pluginPurgeDescription:
     '开启后，在每次请求的 System 末尾追加兜底规则，可以压掉首轮的推脱、免责声明与自我弱化。',
 
+  pluginMemoryLabel: '记忆',
+  pluginMemoryDescription:
+    '开启后，在每次请求的 System 末尾注入一份跨会话档案（我是谁、偏好与禁忌、进行中的事），让它不用每轮重新交代。',
+  pluginMemoryHint:
+    '档案只存在本机，三端不互通；留空时不会注入任何内容。段标题与注入格式一致（中文）。',
+  pluginMemoryPlaceholder:
+    '【我是谁】\n后端工程师，在北京，主要写 TypeScript。\n\n【偏好与禁忌】\n回答先给结论。不要用 emoji。',
+  pluginMemoryEdit: '查看与粘贴档案',
+
   pluginSectionBuiltin: '内置插件',
   pluginSectionCommunity: '非官方插件',
   pluginCommunityEmpty:
@@ -189,8 +199,7 @@ export const zh = {
   advancedModeLabel: '高级模式',
   advancedModeExited: '已退出高级模式',
   advancedModeDialogTitle: '启用高级模式',
-  advancedModeWarning:
-    '启用高级模式可能会出现一些不可控的影响，还可能会导致应用程序崩溃，建议加入',
+  advancedModeWarning: '启用高级模式可能会出现一些不可控的影响，还可能会导致应用程序崩溃，建议加入',
   advancedModeWarningTail: '。',
   advancedModeCopyGroup: '复制群号',
   advancedModeJoinNow: '立即跳转',
